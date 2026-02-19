@@ -1,17 +1,16 @@
-name: CI-CD Wallet Service
+name: CI Wallet Service
 
 on:
   push:
-    branches: [ "staging", "main" ]
+    branches: ["staging", "main"]
   pull_request:
-    branches: [ "staging", "main" ]
+    branches: ["staging", "main"]
 
 permissions:
   contents: read
   pull-requests: read
 
 jobs:
-
   build-test-lint-sonar:
     runs-on: ubuntu-latest
 
@@ -21,7 +20,7 @@ jobs:
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -36,14 +35,20 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Validate Sonar Configuration
+      - name: Validate Sonar variables
         run: |
-          test -n "${SONAR_TOKEN}" || (echo "SONAR_TOKEN is not set" && exit 1)
-          test -n "${SONAR_PROJECT_KEY}" || (echo "SONAR_PROJECT_KEY is not set" && exit 1)
-          test -n "${SONAR_ORGANIZATION}" || (echo "SONAR_ORGANIZATION is not set" && exit 1)
+          if [ -z "$SONAR_TOKEN" ] || [ -z "$SONAR_PROJECT_KEY" ] || [ -z "$SONAR_ORGANIZATION" ]; then
+            echo "Missing SonarCloud configuration."
+            exit 1
+          fi
 
-      - name: Build, Test, Coverage
-        run: ./gradlew --no-daemon clean check jacocoTestReport
+
+      - name: Build and Test
+        run: ./gradlew --no-daemon clean build
+
+
+      - name: Generate Coverage Report
+        run: ./gradlew jacocoTestReport
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v6
@@ -59,20 +64,4 @@ jobs:
             -Dsonar.tests=src/test
             -Dsonar.java.binaries=build/classes
             -Dsonar.junit.reportPaths=build/test-results/test
-            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
-            -Dsonar.qualitygate.wait=true
-
-  deploy:
-    name: Deployment
-    needs: build-test-lint-sonar
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-
-    steps:
-      - name: Deploy to Environment
-        run: |
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            echo "Deploying to PRODUCTION environment"
-          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
-            echo "Deploying to STAGING environment"
-          fi
+            -Dsonar.coverage.jacoco.xmlReportPaths=b

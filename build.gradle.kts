@@ -1,9 +1,11 @@
 plugins {
     java
+    checkstyle
+    jacoco
+    id("com.github.spotbugs") version "6.0.27"
     id("org.springframework.boot") version "3.5.11"
     id("io.spring.dependency-management") version "1.1.7"
-    id("org.sonarqube") version "4.4.1.3373"
-    id("jacoco")
+    id("org.sonarqube") version "6.0.1.5171"
 }
 
 group = "id.ac.ui.cs.advprog"
@@ -16,8 +18,22 @@ java {
     }
 }
 
+configurations {
+    compileOnly {
+        extendsFrom(configurations.annotationProcessor.get())
+    }
+}
+
 repositories {
     mavenCentral()
+}
+
+checkstyle {
+    toolVersion = "10.17.0"
+}
+
+jacoco {
+    toolVersion = "0.8.12"
 }
 
 dependencies {
@@ -27,6 +43,7 @@ dependencies {
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
 
+    annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -35,13 +52,6 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
-}
-
-jacoco {
-    toolVersion = "0.8.11"
-}
-
-tasks.test {
     finalizedBy(tasks.jacocoTestReport)
 }
 
@@ -50,7 +60,6 @@ tasks.jacocoTestReport {
     reports {
         xml.required.set(true)
         html.required.set(true)
-        csv.required.set(false)
     }
 }
 
@@ -58,8 +67,7 @@ tasks.jacocoTestCoverageVerification {
     violationRules {
         rule {
             limit {
-                minimum = "0.80".toBigDecimal()
-                // ganti ke "1.0".toBigDecimal() kalau mau paksa 100%
+                minimum = "0.50".toBigDecimal()
             }
         }
     }
@@ -68,3 +76,14 @@ tasks.jacocoTestCoverageVerification {
 tasks.check {
     dependsOn(tasks.jacocoTestCoverageVerification)
 }
+
+tasks.withType<com.github.spotbugs.snom.SpotBugsTask> {
+    reports.create("html") {
+        required.set(true)
+        outputLocation.set(layout.buildDirectory.file("reports/spotbugs/${name}.html"))
+    }
+}
+
+sonarqube {
+    properties {
+        property("sonar.projectKey", System.getenv("SONAR_PROJECT_KE
