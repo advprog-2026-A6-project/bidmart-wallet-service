@@ -1,10 +1,10 @@
-name: CI Wallet Service
+name: CI/CD Pipeline
 
 on:
   push:
-    branches: ["staging", "main"]
+    branches: [ "staging", "main" ]
   pull_request:
-    branches: ["staging", "main"]
+    branches: [ "staging", "main" ]
 
 permissions:
   contents: read
@@ -13,14 +13,13 @@ permissions:
 jobs:
   build-test-lint-sonar:
     runs-on: ubuntu-latest
-
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       SONAR_PROJECT_KEY: ${{ vars.SONAR_PROJECT_KEY }}
       SONAR_ORGANIZATION: ${{ vars.SONAR_ORGANIZATION }}
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -35,20 +34,15 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Validate Sonar variables
+      - name: Validate SonarCloud configuration
         run: |
-          if [ -z "$SONAR_TOKEN" ] || [ -z "$SONAR_PROJECT_KEY" ] || [ -z "$SONAR_ORGANIZATION" ]; then
-            echo "Missing SonarCloud configuration."
-            exit 1
-          fi
+          set -euo pipefail
+          test -n "${SONAR_TOKEN}" || (echo "SONAR_TOKEN is not set" && exit 1)
+          test -n "${SONAR_PROJECT_KEY}" || (echo "SONAR_PROJECT_KEY is not set" && exit 1)
+          test -n "${SONAR_ORGANIZATION}" || (echo "SONAR_ORGANIZATION is not set" && exit 1)
 
-
-      - name: Build and Test
-        run: ./gradlew --no-daemon clean build
-
-
-      - name: Generate Coverage Report
-        run: ./gradlew jacocoTestReport
+      - name: Test + Lint + Coverage
+        run: ./gradlew --no-daemon clean check jacocoTestReport
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@v6
@@ -64,4 +58,22 @@ jobs:
             -Dsonar.tests=src/test
             -Dsonar.java.binaries=build/classes
             -Dsonar.junit.reportPaths=build/test-results/test
-            -Dsonar.coverage.jacoco.xmlReportPaths=b
+            -Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml
+
+  dummy-deployment:
+    name: Dummy CD Deployment
+    needs: build-test-lint-sonar
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - name: Simulate Deployment Process
+        run: |
+          echo "CI passed successfully! Code quality check passed. Memulai proses deployment..."
+          
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            echo "Deploying to PRODUCTION environment (Dummy)..."
+          elif [ "${{ github.ref }}" == "refs/heads/staging" ]; then
+            echo "Deploying to STAGING environment (Dummy)..."
+          fi
+          
+          echo "Dummy Deployment selesai!"
