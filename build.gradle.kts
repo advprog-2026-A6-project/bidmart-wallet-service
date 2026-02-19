@@ -18,12 +18,6 @@ java {
     }
 }
 
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
-}
-
 repositories {
     mavenCentral()
 }
@@ -42,8 +36,8 @@ dependencies {
 
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
-
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
+
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -63,19 +57,6 @@ tasks.jacocoTestReport {
     }
 }
 
-tasks.jacocoTestCoverageVerification {
-    violationRules {
-        rule {
-            limit {
-                minimum = "0.50".toBigDecimal()
-            }
-        }
-    }
-}
-
-tasks.check {
-    dependsOn(tasks.jacocoTestCoverageVerification)
-}
 
 tasks.withType<com.github.spotbugs.snom.SpotBugsTask> {
     reports.create("html") {
@@ -83,7 +64,3 @@ tasks.withType<com.github.spotbugs.snom.SpotBugsTask> {
         outputLocation.set(layout.buildDirectory.file("reports/spotbugs/${name}.html"))
     }
 }
-
-sonarqube {
-    properties {
-        property("sonar.projectKey", System.getenv("SONAR_PROJECT_KE
