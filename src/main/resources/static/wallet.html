@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Wallet Test Barebone</title>
+</head>
+<body>
+
+<h2>Wallet Integration Test</h2>
+<p>Status: <span id="status">Ready</span></p>
+
+<button onclick="createDummy()">Create Dummy</button>
+<button onclick="fetchWallets()">Refresh List</button>
+
+<hr>
+
+<div id="walletList">
+</div>
+
+<script>
+    const API_URL = '/api/wallets';
+
+    function createDummy() {
+        document.getElementById('status').innerText = 'Processing...';
+        fetch(API_URL + '/dummy', { method: 'POST' })
+            .then(res => {
+                if(res.ok) {
+                    document.getElementById('status').innerText = 'Created!';
+                    fetchWallets();
+                }
+            })
+            .catch(err => document.getElementById('status').innerText = 'Error: ' + err);
+    }
+
+    function fetchWallets() {
+        fetch(API_URL)
+            .then(res => res.json())
+            .then(data => {
+                const listDiv = document.getElementById('walletList');
+                listDiv.innerHTML = '<h3>Data:</h3>';
+                data.forEach(w => {
+                    listDiv.innerHTML += `
+                            <p>
+                                <b>Owner:</b> ${w.ownerName} |
+                                <b>Balance:</b> ${w.balance} |
+                                <b>ID:</b> ${w.id}
+                            </p>
+                        `;
+                });
+            });
+    }
+
+    // Load data pas buka halaman
+    fetchWallets();
+</script>
+
+</body>
+</html>
