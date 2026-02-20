@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: wallet
+  datasource:
+    url: ${SUPABASE_DB_URL}
+    username: ${SUPABASE_DB_USERNAME}
+    password: ${SUPABASE_DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+staging:
+  links:
+    frontend-url: ${FRONTEND_STAGING_URL:not-set}
+    backend-url: ${BACKEND_STAGING_URL:not-set}
+    database-url: ${DATABASE_STAGING_URL:not-set}
