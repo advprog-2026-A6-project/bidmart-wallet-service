@@ -11,9 +11,11 @@ public class WalletInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (walletService.getAllWallets().isEmpty()) {
-            walletService.createWallet("Initial Owner", 5000L);
-            System.out.println(">>> Dummy Wallet Created!");
+        try {
+            walletService.getWalletByUserId(1L);
+            System.out.println(">>> Wallet for User 1 is ready!");
+        } catch (Exception e) {
+            System.out.println(">>> Error initializing wallet: " + e.getMessage());
         }
     }
 }

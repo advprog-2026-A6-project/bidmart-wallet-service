@@ -2,22 +2,28 @@ package id.ac.ui.cs.advprog.bidmartwalletservice.feature;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class WalletService {
     private final WalletRepository walletRepository;
 
-    public Wallet createWallet(String name, Long initialBalance) {
-        Wallet wallet = Wallet.builder()
-                .ownerName(name)
-                .balance(initialBalance)
-                .build();
-        return walletRepository.save(wallet);
+    public Wallet getWalletByUserId(Long userId) {
+        return walletRepository.findById(userId)
+                .orElseGet(() -> walletRepository.save(
+                        Wallet.builder()
+                                .userId(userId)
+                                .balance(0L)
+                                .build()
+                ));
     }
 
-    public List<Wallet> getAllWallets() {
-        return walletRepository.findAll();
+    @Transactional
+    public Wallet topUp(Long userId, Long amount) {
+        if (amount <= 0) throw new IllegalArgumentException("Top-up must be > 0");
+        Wallet wallet = getWalletByUserId(userId);
+        wallet.setBalance(wallet.getBalance() + amount);
+        return walletRepository.save(wallet);
     }
 }

@@ -5,27 +5,25 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "wallets")
 @Getter @Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@NoArgsConstructor @AllArgsConstructor @Builder
 public class Wallet {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    private String ownerName;
+    @Column(name = "user_id")
+    private Long userId;
 
     private Long balance;
 
+    @Version
+    private Long version;
+
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
-        if (this.balance == null) {
-            this.balance = 0L;
-        }
+        if (this.balance == null) this.balance = 0L;
     }
 }

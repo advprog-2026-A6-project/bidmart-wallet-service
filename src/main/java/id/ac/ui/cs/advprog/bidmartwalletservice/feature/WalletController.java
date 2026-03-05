@@ -1,22 +1,24 @@
 package id.ac.ui.cs.advprog.bidmartwalletservice.feature;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 @RestController
-@RequestMapping("/api/wallets")
+@RequestMapping("/api/wallet")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class WalletController {
     private final WalletService walletService;
-
-    @PostMapping("/dummy")
-    public Wallet createDummy() {
-        return walletService.createWallet("User Dummy " + System.currentTimeMillis(), 1000L);
+    @GetMapping("/{userId}")
+    public ResponseEntity<Wallet> getWallet(@PathVariable Long userId) {
+        return ResponseEntity.ok(walletService.getWalletByUserId(userId));
     }
 
-    @GetMapping
-    public List<Wallet> getAll() {
-        return walletService.getAllWallets();
+    @PostMapping("/{userId}/topup")
+    public ResponseEntity<Wallet> topUp(
+            @PathVariable Long userId,
+            @RequestParam Long amount) {
+        return ResponseEntity.ok(walletService.topUp(userId, amount));
     }
 }
