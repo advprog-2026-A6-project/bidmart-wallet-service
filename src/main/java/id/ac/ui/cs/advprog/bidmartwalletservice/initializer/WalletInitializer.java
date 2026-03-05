@@ -1,5 +1,6 @@
-package id.ac.ui.cs.advprog.bidmartwalletservice.feature;
+package id.ac.ui.cs.advprog.bidmartwalletservice.initializer;
 
+import id.ac.ui.cs.advprog.bidmartwalletservice.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;

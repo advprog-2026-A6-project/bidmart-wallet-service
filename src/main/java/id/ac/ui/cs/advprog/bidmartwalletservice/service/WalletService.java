@@ -1,5 +1,7 @@
-package id.ac.ui.cs.advprog.bidmartwalletservice.feature;
+package id.ac.ui.cs.advprog.bidmartwalletservice.service;
 
+import id.ac.ui.cs.advprog.bidmartwalletservice.model.Wallet;
+import id.ac.ui.cs.advprog.bidmartwalletservice.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
