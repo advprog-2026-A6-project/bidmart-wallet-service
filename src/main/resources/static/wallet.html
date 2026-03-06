@@ -1,56 +1,59 @@
 <!DOCTYPE html>
-<html lang="en"> <head>
-    <meta charset="UTF-8"> <title>Wallet Test Barebone</title>
+<html lang="en">
+<head>
+    <title>Wallet Feature</title>
 </head>
 <body>
-
-<h2>Wallet Integration Test</h2>
-<p>Status: <span id="status">Ready</span></p>
-
-<button onclick="createDummy()">Create Dummy</button>
-<button onclick="fetchWallets()">Refresh List</button>
+<h1>BidMart Wallet</h1>
 
 <hr>
 
-<div id="walletList">
+<div>
+    <label>Masukkan User ID:</label>
+    <input type="number" id="userIdInput" value="1">
+    <button onclick="checkWallet()">Cek/Konek Dompet</button>
+</div>
+
+<br>
+
+<div id="displayArea" style="display:none;">
+    <p>User ID: <span id="resId"></span></p>
+    <p>Saldo: <b>Rp<span id="resBalance"></span></b></p>
+    <p>Versi DB: <span id="resVersion"></span></p>
+
+    <hr>
+
+    <label>Nominal Top Up:</label>
+    <input type="number" id="amountInput">
+    <button onclick="doTopUp()">Proses Top Up</button>
 </div>
 
 <script>
-    const API_URL = '/api/wallets';
+    const API = "/api/wallet";
 
-    function createDummy() {
-        document.getElementById('status').innerText = 'Processing...';
-        fetch(API_URL + '/dummy', { method: 'POST' })
-            .then(res => {
-                if(res.ok) {
-                    document.getElementById('status').innerText = 'Created!';
-                    fetchWallets();
-                }
-            })
-            .catch(err => document.getElementById('status').innerText = 'Error: ' + err);
+    async function checkWallet() {
+        const id = document.getElementById('userIdInput').value;
+        const res = await fetch(API + "/" + id);
+        const data = await res.json();
+
+        document.getElementById('resId').innerText = data.userId;
+        document.getElementById('resBalance').innerText = data.balance;
+        document.getElementById('resVersion').innerText = data.version;
+        document.getElementById('displayArea').style.display = 'block';
     }
 
-    function fetchWallets() {
-        fetch(API_URL)
-            .then(res => res.json())
-            .then(data => {
-                const listDiv = document.getElementById('walletList');
-                listDiv.innerHTML = '<h3>Data:</h3>';
-                data.forEach(w => {
-                    listDiv.innerHTML += `
-                            <p>
-                                <b>Owner:</b> ${w.ownerName} |
-                                <b>Balance:</b> ${w.balance} |
-                                <b>ID:</b> ${w.id}
-                            </p>
-                        `;
-                });
-            });
-    }
+    async function doTopUp() {
+        const id = document.getElementById('userIdInput').value;
+        const amount = document.getElementById('amountInput').value;
+        const res = await fetch(API + "/" + id + "/topup?amount=" + amount, {
+            method: 'POST'
+        });
+        const data = await res.json();
 
-    // Load data pas buka halaman
-    fetchWallets();
+        alert("Top Up Berhasil!");
+        document.getElementById('resBalance').innerText = data.balance;
+        document.getElementById('resVersion').innerText = data.version;
+    }
 </script>
-
 </body>
 </html>
