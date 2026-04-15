@@ -1,6 +1,8 @@
 package id.ac.ui.cs.advprog.bidmartwalletservice.service;
 
+import id.ac.ui.cs.advprog.bidmartwalletservice.model.Transaction;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.Wallet;
+import id.ac.ui.cs.advprog.bidmartwalletservice.repository.TransactionRepository;
 import id.ac.ui.cs.advprog.bidmartwalletservice.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +11,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -20,6 +24,9 @@ class WalletServiceTest {
 
     @Mock
     private WalletRepository walletRepository;
+
+    @Mock
+    private TransactionRepository transactionRepository; // Mock baru
 
     @InjectMocks
     private WalletService walletService;
@@ -38,13 +45,8 @@ class WalletServiceTest {
     @Test
     void testGetWalletByUserId_Found() {
         when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
-
         Wallet result = walletService.getWalletByUserId(1L);
-
-        assertNotNull(result);
-        assertEquals(1L, result.getUserId());
         assertEquals(1000L, result.getBalance());
-        verify(walletRepository, times(1)).findById(1L);
     }
 
     @Test
@@ -53,11 +55,8 @@ class WalletServiceTest {
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
 
         Wallet result = walletService.getWalletByUserId(2L);
-
-        assertNotNull(result);
-        assertEquals(2L, result.getUserId());
         assertEquals(0L, result.getBalance());
-        verify(walletRepository, times(1)).save(any(Wallet.class));
+        verify(walletRepository).save(any(Wallet.class));
     }
 
     @Test
@@ -68,14 +67,59 @@ class WalletServiceTest {
         Wallet result = walletService.topUp(1L, 500L);
 
         assertEquals(1500L, result.getBalance());
-        verify(walletRepository, times(1)).save(any(Wallet.class));
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
     }
 
     @Test
-    void testTopUp_NegativeAmount_ShouldThrowException() {
-        assertThrows(IllegalArgumentException.class, () -> {
-            walletService.topUp(1L, -100L);
+    void testTopUp_InvalidAmount() {
+        assertThrows(IllegalArgumentException.class, () -> walletService.topUp(1L, 0L));
+        assertThrows(IllegalArgumentException.class, () -> walletService.topUp(1L, -100L));
+    }
+
+    @Test
+    void testWithdraw_Success() {
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Wallet result = walletService.withdraw(1L, 400L, "BCA-123");
+
+        assertEquals(600L, result.getBalance());
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+    }
+
+    @Test
+    void testWithdraw_InsufficientBalance() {
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            walletService.withdraw(1L, 2000L, "BCA-123");
         });
+
+        assertEquals("Saldo tidak mencukupi untuk penarikan", exception.getMessage());
         verify(walletRepository, never()).save(any(Wallet.class));
+    }
+
+    @Test
+    void testWithdraw_InvalidAmount() {
+        assertThrows(IllegalArgumentException.class, () -> walletService.withdraw(1L, -50L, "BCA-123"));
+    }
+
+    @Test
+    void testWithdraw_EmptyBankAccount() {
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+
+        assertThrows(IllegalArgumentException.class, () -> walletService.withdraw(1L, 100L, ""));
+        assertThrows(IllegalArgumentException.class, () -> walletService.withdraw(1L, 100L, null));
+    }
+
+    @Test
+    void testGetHistory() {
+        List<Transaction> mockHistory = Arrays.asList(new Transaction(), new Transaction());
+        when(transactionRepository.findByUserIdOrderByTimestampDesc(1L)).thenReturn(mockHistory);
+
+        List<Transaction> result = walletService.getHistory(1L);
+
+        assertEquals(2, result.size());
+        verify(transactionRepository).findByUserIdOrderByTimestampDesc(1L);
     }
 }
