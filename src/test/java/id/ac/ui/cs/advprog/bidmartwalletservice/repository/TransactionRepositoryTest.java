@@ -52,7 +52,7 @@ class TransactionRepositoryTest {
                 .userId(otherUserId).type("TOPUP").amount(999L).build();
         transactionRepository.save(tOther);
 
-        List<Transaction> history = transactionRepository.findByUserIdOrderByTimestampDesc(userId);
+        List<Transaction> history = transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
 
         assertEquals(2, history.size(), "Harusnya hanya mengambil 2 transaksi milik userId 1");
 
@@ -62,7 +62,7 @@ class TransactionRepositoryTest {
 
     @Test
     void testFindByUserIdEmptyResult() {
-        List<Transaction> history = transactionRepository.findByUserIdOrderByTimestampDesc(999L);
+        List<Transaction> history = transactionRepository.findByUserIdOrderByCreatedAtDesc(999L);
         assertTrue(history.isEmpty(), "Harusnya kosong jika userId tidak punya riwayat");
     }
 }

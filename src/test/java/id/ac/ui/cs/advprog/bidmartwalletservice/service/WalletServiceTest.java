@@ -115,11 +115,11 @@ class WalletServiceTest {
     @Test
     void testGetHistory() {
         List<Transaction> mockHistory = Arrays.asList(new Transaction(), new Transaction());
-        when(transactionRepository.findByUserIdOrderByTimestampDesc(1L)).thenReturn(mockHistory);
+        when(transactionRepository.findByUserIdOrderByCreatedAtDesc(1L)).thenReturn(mockHistory);
 
         List<Transaction> result = walletService.getHistory(1L);
 
         assertEquals(2, result.size());
-        verify(transactionRepository).findByUserIdOrderByTimestampDesc(1L);
+        verify(transactionRepository).findByUserIdOrderByCreatedAtDesc(1L);
     }
 }
