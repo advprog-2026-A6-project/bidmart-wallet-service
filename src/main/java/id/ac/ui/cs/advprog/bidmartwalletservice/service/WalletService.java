@@ -1,23 +1,24 @@
 package id.ac.ui.cs.advprog.bidmartwalletservice.service;
 
+import id.ac.ui.cs.advprog.bidmartwalletservice.model.Transaction; // Import baru
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.Wallet;
+import id.ac.ui.cs.advprog.bidmartwalletservice.repository.TransactionRepository; // Import baru
 import id.ac.ui.cs.advprog.bidmartwalletservice.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List; // Import baru
 
 @Service
 @RequiredArgsConstructor
 public class WalletService {
     private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
 
     public Wallet getWalletByUserId(Long userId) {
         return walletRepository.findById(userId)
                 .orElseGet(() -> walletRepository.save(
-                        Wallet.builder()
-                                .userId(userId)
-                                .balance(0L)
-                                .build()
+                        Wallet.builder().userId(userId).balance(0L).build()
                 ));
     }
 
@@ -26,6 +27,38 @@ public class WalletService {
         if (amount <= 0) throw new IllegalArgumentException("Top-up must be > 0");
         Wallet wallet = getWalletByUserId(userId);
         wallet.setBalance(wallet.getBalance() + amount);
+
+        transactionRepository.save(Transaction.builder()
+                .userId(userId).type("TOPUP").amount(amount)
+                .description("Top-up via System").build());
+
         return walletRepository.save(wallet);
+    }
+
+    @Transactional
+    public Wallet withdraw(Long userId, Long amount, String bankAccount) {
+        if (amount <= 0) throw new IllegalArgumentException("Withdrawal must be > 0");
+
+        Wallet wallet = getWalletByUserId(userId);
+
+        if (wallet.getBalance() < amount) {
+            throw new IllegalStateException("Saldo tidak mencukupi untuk penarikan");
+        }
+
+        if (bankAccount == null || bankAccount.isEmpty()) {
+            throw new IllegalArgumentException("Nomor rekening bank harus diisi");
+        }
+
+        wallet.setBalance(wallet.getBalance() - amount);
+
+        transactionRepository.save(Transaction.builder()
+                .userId(userId).type("WITHDRAW").amount(amount)
+                .description("Transfer ke Bank: " + bankAccount).build());
+
+        return walletRepository.save(wallet);
+    }
+
+    public List<Transaction> getHistory(Long userId) {
+        return transactionRepository.findByUserIdOrderByTimestampDesc(userId);
     }
 }
