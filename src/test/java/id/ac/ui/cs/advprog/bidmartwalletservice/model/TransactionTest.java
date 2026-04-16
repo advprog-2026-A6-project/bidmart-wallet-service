@@ -15,7 +15,7 @@ class TransactionTest {
                 .type("WITHDRAW")
                 .amount(50000L)
                 .description("Transfer ke Bank BCA")
-                .timestamp(now)
+                .createdAt(now)
                 .build();
 
         assertEquals(100L, transaction.getId());
@@ -23,7 +23,7 @@ class TransactionTest {
         assertEquals("WITHDRAW", transaction.getType());
         assertEquals(50000L, transaction.getAmount());
         assertEquals("Transfer ke Bank BCA", transaction.getDescription());
-        assertEquals(now, transaction.getTimestamp());
+        assertEquals(now, transaction.getCreatedAt());
     }
 
     @Test
@@ -36,14 +36,14 @@ class TransactionTest {
         transaction.setType("TOPUP");
         transaction.setAmount(100000L);
         transaction.setDescription("Top up saldo");
-        transaction.setTimestamp(now);
+        transaction.setCreatedAt(now);
 
         assertEquals(200L, transaction.getId());
         assertEquals(2L, transaction.getUserId());
         assertEquals("TOPUP", transaction.getType());
         assertEquals(100000L, transaction.getAmount());
         assertEquals("Top up saldo", transaction.getDescription());
-        assertEquals(now, transaction.getTimestamp());
+        assertEquals(now, transaction.getCreatedAt());
     }
 
     @Test
@@ -66,11 +66,11 @@ class TransactionTest {
     @Test
     void testOnCreate_SetsTimestamp() {
         Transaction transaction = new Transaction();
-        assertNull(transaction.getTimestamp());
+        assertNull(transaction.getCreatedAt());
 
         transaction.onCreate();
 
-        assertNotNull(transaction.getTimestamp());
-        assertTrue(transaction.getTimestamp().isBefore(LocalDateTime.now().plusSeconds(1)));
+        assertNotNull(transaction.getCreatedAt());
+        assertTrue(transaction.getCreatedAt().isBefore(LocalDateTime.now().plusSeconds(1)));
     }
 }
