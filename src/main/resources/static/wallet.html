@@ -5,7 +5,6 @@
 </head>
 <body>
 <h1>BidMart Wallet</h1>
-
 <hr>
 
 <div>
@@ -23,9 +22,27 @@
 
     <hr>
 
-    <label>Nominal Top Up:</label>
-    <input type="number" id="amountInput">
+    <h3>Top Up Saldo</h3>
+    <label>Nominal:</label>
+    <input type="number" id="amountInput" placeholder="Contoh: 50000">
     <button onclick="doTopUp()">Proses Top Up</button>
+
+    <hr>
+
+    <h3>Tarik Saldo ke Bank</h3>
+    <label>Rekening Bank:</label>
+    <input type="text" id="bankInput" placeholder="Contoh: BCA 12345678">
+    <br><br>
+    <label>Nominal Tarik:</label>
+    <input type="number" id="withdrawInput" placeholder="Contoh: 20000">
+    <button onclick="doWithdraw()">Tarik Sekarang</button>
+
+    <hr>
+
+    <h3>Riwayat Transaksi</h3>
+    <div id="historyTable" style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
+        Belum ada transaksi.
+    </div>
 </div>
 
 <script>
@@ -40,19 +57,53 @@
         document.getElementById('resBalance').innerText = data.balance;
         document.getElementById('resVersion').innerText = data.version;
         document.getElementById('displayArea').style.display = 'block';
+        updateHistory(id);
     }
 
     async function doTopUp() {
         const id = document.getElementById('userIdInput').value;
         const amount = document.getElementById('amountInput').value;
-        const res = await fetch(API + "/" + id + "/topup?amount=" + amount, {
+        const res = await fetch(`${API}/${id}/topup?amount=${amount}`, { method: 'POST' });
+
+        if (res.ok) {
+            alert("Top Up Berhasil!");
+            checkWallet();
+        }
+    }
+
+    async function doWithdraw() {
+        const id = document.getElementById('userIdInput').value;
+        const amount = document.getElementById('withdrawInput').value;
+        const bank = document.getElementById('bankInput').value;
+
+        const res = await fetch(`${API}/${id}/withdraw?amount=${amount}&bankAccount=${bank}`, {
             method: 'POST'
         });
+
+        if (res.ok) {
+            alert("Penarikan sedang diproses ke Bank!");
+            checkWallet(); // Refresh UI
+        } else {
+            alert("Gagal: Saldo tidak mencukupi atau data tidak valid.");
+        }
+    }
+
+    async function updateHistory(id) {
+        const res = await fetch(`${API}/${id}/history`);
         const data = await res.json();
 
-        alert("Top Up Berhasil!");
-        document.getElementById('resBalance').innerText = data.balance;
-        document.getElementById('resVersion').innerText = data.version;
+        const historyDiv = document.getElementById('historyTable');
+        if (data.length === 0) {
+            historyDiv.innerHTML = "Belum ada transaksi.";
+            return;
+        }
+
+        historyDiv.innerHTML = data.map(t =>
+            `<div style="margin-bottom: 8px;">
+                <b>[${t.type}]</b> Rp${t.amount} <br>
+                <small>${t.description} | ${new Date(t.timestamp).toLocaleString()}</small>
+            </div>`
+        ).join('');
     }
 </script>
 </body>
