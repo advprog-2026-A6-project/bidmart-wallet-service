@@ -2,7 +2,7 @@ package id.ac.ui.cs.advprog.bidmartwalletservice.initializer;
 
 import id.ac.ui.cs.advprog.bidmartwalletservice.service.WalletService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j; // Tambahkan ini
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 

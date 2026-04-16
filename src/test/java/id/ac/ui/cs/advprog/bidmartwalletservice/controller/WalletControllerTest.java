@@ -38,7 +38,6 @@ class WalletControllerTest {
                 .version(0L)
                 .build();
     }
-
     @Test
     void testGetWallet() throws Exception {
         when(walletService.getWalletByUserId(1L)).thenReturn(mockWallet);
