@@ -1,13 +1,13 @@
 package id.ac.ui.cs.advprog.bidmartwalletservice.service;
 
-import id.ac.ui.cs.advprog.bidmartwalletservice.model.Transaction; // Import baru
+import id.ac.ui.cs.advprog.bidmartwalletservice.model.Transaction;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.Wallet;
-import id.ac.ui.cs.advprog.bidmartwalletservice.repository.TransactionRepository; // Import baru
+import id.ac.ui.cs.advprog.bidmartwalletservice.repository.TransactionRepository;
 import id.ac.ui.cs.advprog.bidmartwalletservice.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List; // Import baru
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -59,6 +59,6 @@ public class WalletService {
     }
 
     public List<Transaction> getHistory(Long userId) {
-        return transactionRepository.findByUserIdOrderByTimestampDesc(userId);
+        return transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
 }

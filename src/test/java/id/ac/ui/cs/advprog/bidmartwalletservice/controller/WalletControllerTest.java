@@ -38,7 +38,6 @@ class WalletControllerTest {
                 .version(0L)
                 .build();
     }
-
     @Test
     void testGetWallet() throws Exception {
         when(walletService.getWalletByUserId(1L)).thenReturn(mockWallet);
@@ -78,11 +77,11 @@ class WalletControllerTest {
     void testGetHistory() throws Exception {
         Transaction t1 = Transaction.builder()
                 .id(1L).userId(1L).type("TOPUP").amount(1000L)
-                .description("Top-up").timestamp(LocalDateTime.now()).build();
+                .description("Top-up").createdAt(LocalDateTime.now()).build();
 
         Transaction t2 = Transaction.builder()
                 .id(2L).userId(1L).type("WITHDRAW").amount(500L)
-                .description("Transfer ke Bank").timestamp(LocalDateTime.now()).build();
+                .description("Transfer ke Bank").createdAt(LocalDateTime.now()).build();
 
         List<Transaction> mockHistory = Arrays.asList(t1, t2);
 
