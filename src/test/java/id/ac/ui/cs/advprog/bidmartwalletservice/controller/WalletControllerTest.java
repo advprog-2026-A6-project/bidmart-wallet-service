@@ -93,4 +93,28 @@ class WalletControllerTest {
                 .andExpect(jsonPath("$[0].type").value("TOPUP"))
                 .andExpect(jsonPath("$[1].type").value("WITHDRAW"));
     }
+
+    @Test
+    void testHoldBalance() throws Exception {
+        mockMvc.perform(post("/api/wallet/1/hold")
+                        .param("amount", "300"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Balance held successfully"));
+    }
+
+    @Test
+    void testReleaseBalance() throws Exception {
+        mockMvc.perform(post("/api/wallet/1/release")
+                        .param("amount", "300"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Balance released successfully"));
+    }
+
+    @Test
+    void testSettlePayment() throws Exception {
+        mockMvc.perform(post("/api/wallet/1/settle")
+                        .param("amount", "300"))
+                .andExpect(status().isOk())
+                .andExpect(content().string("Payment settled successfully"));
+    }
 }

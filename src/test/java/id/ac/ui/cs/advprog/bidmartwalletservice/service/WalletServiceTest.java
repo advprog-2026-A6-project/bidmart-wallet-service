@@ -38,6 +38,7 @@ class WalletServiceTest {
         mockWallet = Wallet.builder()
                 .userId(1L)
                 .balance(1000L)
+                .heldBalance(0L)
                 .version(0L)
                 .build();
     }
@@ -121,5 +122,75 @@ class WalletServiceTest {
 
         assertEquals(2, result.size());
         verify(transactionRepository).findByUserIdOrderByCreatedAtDesc(1L);
+    }
+
+    @Test
+    void testHoldAmount_Success() {
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        walletService.holdAmount(1L, 400L);
+
+        assertEquals(600L, mockWallet.getBalance());
+        assertEquals(400L, mockWallet.getHeldBalance());
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(walletRepository).save(mockWallet);
+    }
+
+    @Test
+    void testHoldAmount_InsufficientBalance() {
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            walletService.holdAmount(1L, 2000L);
+        });
+
+        assertEquals("Saldo tidak cukup untuk melakukan bid", exception.getMessage());
+        verify(walletRepository, never()).save(any(Wallet.class));
+    }
+
+    @Test
+    void testReleaseAmount_Success() {
+        mockWallet.setBalance(700L);
+        mockWallet.setHeldBalance(300L);
+
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        walletService.releaseAmount(1L, 300L);
+
+        assertEquals(1000L, mockWallet.getBalance());
+        assertEquals(0L, mockWallet.getHeldBalance());
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(walletRepository).save(mockWallet);
+    }
+
+    @Test
+    void testSettlePayment_Success() {
+        mockWallet.setBalance(700L);
+        mockWallet.setHeldBalance(300L);
+
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        walletService.settlePayment(1L, 300L);
+
+        assertEquals(700L, mockWallet.getBalance());
+        assertEquals(0L, mockWallet.getHeldBalance());
+        verify(transactionRepository, times(1)).save(any(Transaction.class));
+        verify(walletRepository).save(mockWallet);
+    }
+
+    @Test
+    void testSettlePayment_InconsistentData() {
+        mockWallet.setHeldBalance(100L);
+        when(walletRepository.findById(1L)).thenReturn(Optional.of(mockWallet));
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
+            walletService.settlePayment(1L, 500L);
+        });
+
+        assertEquals("Data held balance tidak konsisten!", exception.getMessage());
+        verify(walletRepository, never()).save(any(Wallet.class));
     }
 }

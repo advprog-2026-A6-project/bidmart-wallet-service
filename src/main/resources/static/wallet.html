@@ -17,7 +17,8 @@
 
 <div id="displayArea" style="display:none;">
     <p>User ID: <span id="resId"></span></p>
-    <p>Saldo: <b>Rp<span id="resBalance"></span></b></p>
+    <p>Saldo Tersedia: <b>Rp<span id="resBalance"></span></b></p>
+    <p>Saldo Tertahan (Bid): <b style="color: orange;">Rp<span id="resHeldBalance"></span></b></p>
     <p>Versi DB: <span id="resVersion"></span></p>
 
     <hr>
@@ -55,6 +56,7 @@
 
         document.getElementById('resId').innerText = data.userId;
         document.getElementById('resBalance').innerText = data.balance;
+        document.getElementById('resHeldBalance').innerText = data.heldBalance || 0;
         document.getElementById('resVersion').innerText = data.version;
         document.getElementById('displayArea').style.display = 'block';
         updateHistory(id);
@@ -82,7 +84,7 @@
 
         if (res.ok) {
             alert("Penarikan sedang diproses ke Bank!");
-            checkWallet(); // Refresh UI
+            checkWallet();
         } else {
             alert("Gagal: Saldo tidak mencukupi atau data tidak valid.");
         }
@@ -101,7 +103,7 @@
         historyDiv.innerHTML = data.map(t =>
             `<div style="margin-bottom: 8px;">
                 <b>[${t.type}]</b> Rp${t.amount} <br>
-                <small>${t.description} | ${new Date(t.timestamp).toLocaleString()}</small>
+                <small>${t.description} | ${new Date(t.createdAt).toLocaleString()}</small>
             </div>`
         ).join('');
     }
