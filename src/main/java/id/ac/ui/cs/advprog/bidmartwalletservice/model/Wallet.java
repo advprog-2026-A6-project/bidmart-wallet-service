@@ -15,6 +15,9 @@ public class Wallet {
 
     private Long balance;
 
+    @Column(name = "held_balance")
+    private Long heldBalance;
+
     @Version
     private Long version;
 
@@ -25,5 +28,6 @@ public class Wallet {
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         if (this.balance == null) this.balance = 0L;
+        if (this.heldBalance == null) this.heldBalance = 0L;
     }
 }

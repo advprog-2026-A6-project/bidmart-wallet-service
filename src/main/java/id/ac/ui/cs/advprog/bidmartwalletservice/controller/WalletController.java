@@ -36,4 +36,22 @@ public class WalletController {
     public ResponseEntity<List<Transaction>> getHistory(@PathVariable Long userId) {
         return ResponseEntity.ok(walletService.getHistory(userId));
     }
+
+    @PostMapping("/{userId}/hold")
+    public ResponseEntity<String> holdBalance(@PathVariable Long userId, @RequestParam Long amount) {
+        walletService.holdAmount(userId, amount);
+        return ResponseEntity.ok("Balance held successfully");
+    }
+
+    @PostMapping("/{userId}/release")
+    public ResponseEntity<String> releaseBalance(@PathVariable Long userId, @RequestParam Long amount) {
+        walletService.releaseAmount(userId, amount);
+        return ResponseEntity.ok("Balance released successfully");
+    }
+
+    @PostMapping("/{userId}/settle")
+    public ResponseEntity<String> settlePayment(@PathVariable Long userId, @RequestParam Long amount) {
+        walletService.settlePayment(userId, amount);
+        return ResponseEntity.ok("Payment settled successfully");
+    }
 }

@@ -61,4 +61,52 @@ public class WalletService {
     public List<Transaction> getHistory(Long userId) {
         return transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
     }
+
+    @Transactional
+    public void holdAmount(Long userId, Long amount) {
+        Wallet wallet = getWalletByUserId(userId);
+
+        if (wallet.getBalance() < amount) {
+            throw new IllegalStateException("Saldo tidak cukup untuk melakukan bid");
+        }
+
+        wallet.setBalance(wallet.getBalance() - amount);
+        wallet.setHeldBalance(wallet.getHeldBalance() + amount);
+
+        transactionRepository.save(Transaction.builder()
+                .userId(userId).type("HOLD").amount(amount)
+                .description("Dana ditahan untuk penawaran lelang").build());
+
+        walletRepository.save(wallet);
+    }
+
+    @Transactional
+    public void releaseAmount(Long userId, Long amount) {
+        Wallet wallet = getWalletByUserId(userId);
+
+        wallet.setHeldBalance(wallet.getHeldBalance() - amount);
+        wallet.setBalance(wallet.getBalance() + amount);
+
+        transactionRepository.save(Transaction.builder()
+                .userId(userId).type("RELEASE").amount(amount)
+                .description("Dana dilepaskan karena bid kalah").build());
+
+        walletRepository.save(wallet);
+    }
+
+    @Transactional
+    public void settlePayment(Long userId, Long amount) {
+        Wallet wallet = getWalletByUserId(userId);
+
+        if (wallet.getHeldBalance() < amount) {
+            throw new IllegalStateException("Data held balance tidak konsisten!");
+        }
+        wallet.setHeldBalance(wallet.getHeldBalance() - amount);
+
+        transactionRepository.save(Transaction.builder()
+                .userId(userId).type("PAYMENT").amount(amount)
+                .description("Pembayaran lelang dimenangkan").build());
+
+        walletRepository.save(wallet);
+    }
 }
