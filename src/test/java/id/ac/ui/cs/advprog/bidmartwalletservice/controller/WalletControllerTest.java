@@ -42,20 +42,32 @@ class WalletControllerTest {
     void testGetWallet() throws Exception {
         when(walletService.getWalletByUserId(1L)).thenReturn(mockWallet);
 
-        mockMvc.perform(get("/api/wallet/1"))
+        mockMvc.perform(get("/api/wallet").header("X-User-Id", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(1))
                 .andExpect(jsonPath("$.balance").value(1000));
     }
 
     @Test
-    void testTopUp() throws Exception {
-        when(walletService.topUp(1L, 500L)).thenReturn(
+    void testInitiateTopUp() throws Exception {
+        mockMvc.perform(post("/api/wallet/topup/initiate")
+                        .header("X-User-Id", 1L)
+                        .param("amount", "500"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.amountToPay").value(500));
+    }
+
+    @Test
+    void testSimulateBankPayment() throws Exception {
+        when(walletService.topUp(1L, 500L, "test-ref")).thenReturn(
                 Wallet.builder().userId(1L).balance(1500L).version(1L).build()
         );
 
-        mockMvc.perform(post("/api/wallet/1/topup")
-                        .param("amount", "500"))
+        mockMvc.perform(post("/api/wallet/topup/simulate-bank-pay")
+                        .param("userId", "1")
+                        .param("amount", "500")
+                        .param("paymentReference", "test-ref"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.balance").value(1500));
     }
@@ -64,11 +76,13 @@ class WalletControllerTest {
     void testWithdraw() throws Exception {
         Wallet updatedWallet = Wallet.builder().userId(1L).balance(800L).version(1L).build();
 
-        when(walletService.withdraw(1L, 200L, "BCA-123")).thenReturn(updatedWallet);
+        when(walletService.withdraw(1L, 200L, "BCA-123", "idempotency-key")).thenReturn(updatedWallet);
 
-        mockMvc.perform(post("/api/wallet/1/withdraw")
+        mockMvc.perform(post("/api/wallet/withdraw")
+                        .header("X-User-Id", 1L)
                         .param("amount", "200")
-                        .param("bankAccount", "BCA-123"))
+                        .param("bankAccount", "BCA-123")
+                        .header("X-Idempotency-Key", "idempotency-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.balance").value(800));
     }
@@ -87,7 +101,7 @@ class WalletControllerTest {
 
         when(walletService.getHistory(1L)).thenReturn(mockHistory);
 
-        mockMvc.perform(get("/api/wallet/1/history"))
+        mockMvc.perform(get("/api/wallet/history").header("X-User-Id", 1L))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].type").value("TOPUP"))
@@ -96,24 +110,31 @@ class WalletControllerTest {
 
     @Test
     void testHoldBalance() throws Exception {
-        mockMvc.perform(post("/api/wallet/1/hold")
-                        .param("amount", "300"))
+        mockMvc.perform(post("/api/wallet/hold")
+                        .param("userId", "1")
+                        .param("amount", "300")
+                        .header("X-Idempotency-Key", "idempotency-key"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Balance held successfully"));
     }
 
     @Test
     void testReleaseBalance() throws Exception {
-        mockMvc.perform(post("/api/wallet/1/release")
-                        .param("amount", "300"))
+        mockMvc.perform(post("/api/wallet/release")
+                        .param("userId", "1")
+                        .param("amount", "300")
+                        .header("X-Idempotency-Key", "idempotency-key"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Balance released successfully"));
     }
 
     @Test
     void testSettlePayment() throws Exception {
-        mockMvc.perform(post("/api/wallet/1/settle")
-                        .param("amount", "300"))
+        mockMvc.perform(post("/api/wallet/settle")
+                        .param("buyerId", "1")
+                        .param("sellerId", "2")
+                        .param("amount", "300")
+                        .header("X-Idempotency-Key", "idempotency-key"))
                 .andExpect(status().isOk())
                 .andExpect(content().string("Payment settled successfully"));
     }
