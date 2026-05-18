@@ -44,6 +44,7 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
     implementation("dev.samstevens.totp:totp:1.7.1")
     testImplementation("com.h2database:h2")
+    implementation("org.springframework.boot:spring-boot-starter-amqp")
 }
 
 tasks.withType<Test> {
