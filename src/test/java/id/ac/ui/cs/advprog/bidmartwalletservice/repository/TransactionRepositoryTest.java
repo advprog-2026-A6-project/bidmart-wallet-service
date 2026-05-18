@@ -22,6 +22,7 @@ class TransactionRepositoryTest {
                 .type("TOPUP")
                 .amount(10000L)
                 .description("Top up awal")
+                .idempotencyKey("idemp-topup-1")
                 .build();
 
         Transaction saved = transactionRepository.save(transaction);
@@ -39,17 +40,17 @@ class TransactionRepositoryTest {
         Long otherUserId = 2L;
 
         Transaction t1 = Transaction.builder()
-                .userId(userId).type("TOPUP").amount(1000L).build();
+                .userId(userId).type("TOPUP").amount(1000L).idempotencyKey("idemp-t1").build();
         transactionRepository.save(t1);
 
         Thread.sleep(10);
 
         Transaction t2 = Transaction.builder()
-                .userId(userId).type("WITHDRAW").amount(500L).build();
+                .userId(userId).type("WITHDRAW").amount(500L).idempotencyKey("idemp-t2").build();
         transactionRepository.save(t2);
 
         Transaction tOther = Transaction.builder()
-                .userId(otherUserId).type("TOPUP").amount(999L).build();
+                .userId(otherUserId).type("TOPUP").amount(999L).idempotencyKey("idemp-tOther").build();
         transactionRepository.save(tOther);
 
         List<Transaction> history = transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
