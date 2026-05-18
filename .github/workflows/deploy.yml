@@ -33,8 +33,10 @@ jobs:
 
       - name: Copy JAR to EC2
         run: |
+          JAR_FILE=$(ls build/libs/*.jar | grep -v 'plain' | head -n 1)
+          
           scp -i ~/.ssh/ec2_key.pem \
-            build/libs/*.jar \
+            $JAR_FILE \
             ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.EC2_USER }}/wallet-service.jar
 
       - name: Deploy on EC2
