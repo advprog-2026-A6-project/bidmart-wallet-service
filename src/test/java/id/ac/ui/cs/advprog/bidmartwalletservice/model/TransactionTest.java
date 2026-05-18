@@ -57,7 +57,7 @@ class TransactionTest {
     @Test
     void testAllArgsConstructor() {
         LocalDateTime now = LocalDateTime.now();
-        Transaction transaction = new Transaction(1L, 1L, "TOPUP", 1000L, "Desc", now);
+        Transaction transaction = new Transaction(1L, 1L, "TOPUP", 1000L, "Desc", 1000L, 0L, "idemp-key", now);
 
         assertEquals(1L, transaction.getId());
         assertEquals("TOPUP", transaction.getType());

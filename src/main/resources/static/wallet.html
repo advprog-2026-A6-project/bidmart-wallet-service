@@ -1,111 +1,227 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Wallet Feature</title>
+    <meta charset="UTF-8">
+    <title>BidMart Wallet (Test/Demo)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f9f9f9; }
+        h1, h3 { color: #333; }
+        input, button { padding: 8px; margin: 5px 0; border-radius: 4px; border: 1px solid #ccc; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #0056b3; }
+        .section { background: white; margin-bottom: 20px; border: 1px solid #ddd; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    </style>
 </head>
 <body>
-<h1>BidMart Wallet</h1>
-<hr>
 
-<div>
-    <label>Masukkan User ID:</label>
+<h1>BidMart Wallet Dashboard</h1>
+
+<div class="section" style="background: #e9ecef; border-color: #b1bbc4;">
+    <label><b>Masukkan User ID Anda:</b></label>
     <input type="number" id="userIdInput" value="1">
-    <button onclick="checkWallet()">Cek/Konek Dompet</button>
+    <button onclick="checkWallet()">Koneksikan Dompet</button>
 </div>
 
-<br>
-
 <div id="displayArea" style="display:none;">
-    <p>User ID: <span id="resId"></span></p>
-    <p>Saldo Tersedia: <b>Rp<span id="resBalance"></span></b></p>
-    <p>Saldo Tertahan (Bid): <b style="color: orange;">Rp<span id="resHeldBalance"></span></b></p>
-    <p>Versi DB: <span id="resVersion"></span></p>
 
-    <hr>
+    <div class="grid-2">
+        <div>
+            <div class="section">
+                <h3>💰 Info Dompet</h3>
+                <p>User ID: <span id="resId"></span></p>
+                <h2 style="color: #28a745; margin: 5px 0;">Rp<span id="resBalance">0</span></h2>
+                <p style="color: #dc3545; margin: 5px 0;">Saldo Tertahan (Bid): Rp<span id="resHeldBalance">0</span></p>
+                <button onclick="checkWallet()" style="background-color: #6c757d;">🔄 Refresh Saldo</button>
+            </div>
 
-    <h3>Top Up Saldo</h3>
-    <label>Nominal:</label>
-    <input type="number" id="amountInput" placeholder="Contoh: 50000">
-    <button onclick="doTopUp()">Proses Top Up</button>
+            <div class="section">
+                <h3>➕ Top Up Saldo</h3>
+                <input type="number" id="amountInput" placeholder="Nominal (Contoh: 50000)">
+                <button onclick="doTopUp()">Proses Top Up</button>
+            </div>
 
-    <hr>
+            <div class="section">
+                <h3>🏦 Tarik Saldo ke Bank</h3>
+                <input type="text" id="bankInput" placeholder="Rekening (Contoh: BCA 12345678)" style="width: 100%;">
+                <input type="number" id="withdrawInput" placeholder="Nominal Tarik">
+                <button onclick="doWithdraw()">Tarik Sekarang</button>
+            </div>
+        </div>
 
-    <h3>Tarik Saldo ke Bank</h3>
-    <label>Rekening Bank:</label>
-    <input type="text" id="bankInput" placeholder="Contoh: BCA 12345678">
-    <br><br>
-    <label>Nominal Tarik:</label>
-    <input type="number" id="withdrawInput" placeholder="Contoh: 20000">
-    <button onclick="doWithdraw()">Tarik Sekarang</button>
+        <div>
+            <div class="section">
+                <h3>⚖️ Simulasi Lelang (Internal)</h3>
+                <p><small><i>Tombol ini meniru request dari Modul Lelang milik Ishak</i></small></p>
+                <input type="number" id="auctionAmount" placeholder="Nominal Lelang">
+                <br>
+                <input type="number" id="sellerId" placeholder="Seller ID (Khusus Settle)">
+                <br>
+                <button onclick="doHold()" style="background-color: #ffc107; color: black;">Hold Dana</button>
+                <button onclick="doRelease()" style="background-color: #17a2b8;">Release Dana</button>
+                <button onclick="doSettle()" style="background-color: #28a745;">Settle (Bayar Seller)</button>
+            </div>
 
-    <hr>
-
-    <h3>Riwayat Transaksi</h3>
-    <div id="historyTable" style="border: 1px solid #ccc; padding: 10px; max-height: 200px; overflow-y: auto;">
-        Belum ada transaksi.
+            <div class="section">
+                <h3>📜 Riwayat Transaksi</h3>
+                <div id="historyTable" style="border: 1px solid #eee; padding: 10px; max-height: 250px; overflow-y: auto; background: #fafafa;">
+                    Belum ada transaksi.
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-    const API = "/api/wallet";
+    // 1. Perbaikan URL Absolut
+    const API = "http://localhost:8080/api/wallet";
+
+    // 2. Fungsi Header Dinamis
+    function getHeaders(includeUserId = true) {
+        const userId = document.getElementById('userIdInput').value;
+        const headers = {
+            'X-Idempotency-Key': crypto.randomUUID(),
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        };
+        // X-User-Id hanya disisipkan untuk endpoint TopUp/Withdraw/History
+        if (includeUserId) {
+            headers['X-User-Id'] = userId;
+        }
+        return headers;
+    }
 
     async function checkWallet() {
-        const id = document.getElementById('userIdInput').value;
-        const res = await fetch(API + "/" + id);
-        const data = await res.json();
+        const userId = document.getElementById('userIdInput').value;
+        if (!userId) return alert("User ID wajib diisi!");
 
-        document.getElementById('resId').innerText = data.userId;
-        document.getElementById('resBalance').innerText = data.balance;
-        document.getElementById('resHeldBalance').innerText = data.heldBalance || 0;
-        document.getElementById('resVersion').innerText = data.version;
-        document.getElementById('displayArea').style.display = 'block';
-        updateHistory(id);
+        try {
+            const res = await fetch(API, { headers: getHeaders(true) });
+            if (!res.ok) throw new Error("Gagal mengambil data wallet");
+            const data = await res.json();
+
+            document.getElementById('resId').innerText = data.userId;
+            document.getElementById('resBalance').innerText = data.balance;
+            document.getElementById('resHeldBalance').innerText = data.heldBalance || 0;
+            document.getElementById('displayArea').style.display = 'block';
+
+            updateHistory(userId);
+        } catch (e) {
+            console.error(e);
+            alert("Gagal konek! Pastikan Spring Boot kamu di localhost:8080 sedang berjalan.");
+        }
+    }
+
+    async function executeTx(url, successMsg, useUserIdHeader = true) {
+        try {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: getHeaders(useUserIdHeader)
+            });
+
+            if (res.ok) {
+                alert(successMsg);
+                checkWallet(); // Auto-refresh saldo
+            } else {
+                const text = await res.text();
+                alert("Transaksi Gagal: " + text);
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Error jaringan. Server mungkin mati.");
+        }
     }
 
     async function doTopUp() {
-        const id = document.getElementById('userIdInput').value;
         const amount = document.getElementById('amountInput').value;
-        const res = await fetch(`${API}/${id}/topup?amount=${amount}`, { method: 'POST' });
+        const userId = document.getElementById('userIdInput').value;
+        if (!amount) return alert("Isi nominal!");
 
-        if (res.ok) {
-            alert("Top Up Berhasil!");
-            checkWallet();
+        try {
+
+            const initRes = await fetch(`${API}/topup/initiate?amount=${amount}`, {
+                method: 'POST',
+                headers: getHeaders()
+            });
+            if (!initRes.ok) throw new Error("Gagal inisiasi VA");
+            const initData = await initRes.json();
+
+
+            const ref = initData.paymentReference;
+
+
+            const payRes = await fetch(`${API}/topup/simulate-bank-pay?userId=${userId}&amount=${amount}&paymentReference=${ref}`, {
+                method: 'POST'
+            });
+
+            if (payRes.ok) {
+                alert("Top Up Berhasil! Dana masuk melalui Virtual Account: " + initData.virtualAccount);
+                checkWallet();
+            } else {
+                alert("Gagal melakukan simulasi pembayaran bank.");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("Terjadi kesalahan sistem.");
         }
     }
 
-    async function doWithdraw() {
-        const id = document.getElementById('userIdInput').value;
+    function doWithdraw() {
         const amount = document.getElementById('withdrawInput').value;
         const bank = document.getElementById('bankInput').value;
-
-        const res = await fetch(`${API}/${id}/withdraw?amount=${amount}&bankAccount=${bank}`, {
-            method: 'POST'
-        });
-
-        if (res.ok) {
-            alert("Penarikan sedang diproses ke Bank!");
-            checkWallet();
-        } else {
-            alert("Gagal: Saldo tidak mencukupi atau data tidak valid.");
-        }
+        if(!amount || !bank) return alert("Lengkapi nominal dan bank!");
+        executeTx(`${API}/withdraw?amount=${amount}&bankAccount=${encodeURIComponent(bank)}`, "Penarikan berhasil!", true);
     }
 
-    async function updateHistory(id) {
-        const res = await fetch(`${API}/${id}/history`);
-        const data = await res.json();
+    // === SIMULASI LELANG (Tidak pakai Header, oper lewat URL Query Param) ===
+    function doHold() {
+        const userId = document.getElementById('userIdInput').value;
+        const amount = document.getElementById('auctionAmount').value;
+        if(!amount) return alert("Isi nominal lelang!");
+        // Perhatikan `useUserIdHeader` = false
+        executeTx(`${API}/hold?userId=${userId}&amount=${amount}`, "Dana berhasil ditahan (Hold)!", false);
+    }
 
-        const historyDiv = document.getElementById('historyTable');
-        if (data.length === 0) {
-            historyDiv.innerHTML = "Belum ada transaksi.";
-            return;
+    function doRelease() {
+        const userId = document.getElementById('userIdInput').value;
+        const amount = document.getElementById('auctionAmount').value;
+        executeTx(`${API}/release?userId=${userId}&amount=${amount}`, "Dana berhasil dilepas (Release)!", false);
+    }
+
+    function doSettle() {
+        const buyerId = document.getElementById('userIdInput').value;
+        const amount = document.getElementById('auctionAmount').value;
+        const sellerId = document.getElementById('sellerId').value;
+        if(!sellerId || !amount) return alert("Lengkapi Seller ID dan Nominal!");
+        executeTx(`${API}/settle?buyerId=${buyerId}&sellerId=${sellerId}&amount=${amount}`, "Settle berhasil: Saldo dipindah ke Seller!", false);
+    }
+
+    async function updateHistory(userId) {
+        try {
+            const res = await fetch(`${API}/history`, { headers: getHeaders(true) });
+            const data = await res.json();
+            const historyDiv = document.getElementById('historyTable');
+
+            if (data.length === 0) {
+                historyDiv.innerHTML = "Belum ada transaksi.";
+                return;
+            }
+
+            historyDiv.innerHTML = data.map(t => {
+                let color = "black";
+                if(t.type === "TOPUP" || t.type === "RECEIPT" || t.type === "RELEASE") color = "green";
+                if(t.type === "WITHDRAW" || t.type === "HOLD" || t.type === "PAYMENT") color = "red";
+
+                return `
+                <div style="margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px;">
+                    <b style="color:${color}">[${t.type}]</b> Rp${t.amount} <br>
+                    <small style="color:gray;">Saldo: Rp${t.balanceAfter} | Held: Rp${t.heldBalanceAfter}</small><br>
+                    <small><i>${t.description} | ${new Date(t.createdAt).toLocaleString()}</i></small>
+                </div>`;
+            }).join('');
+        } catch(e) {
+            console.error("Gagal load history", e);
         }
-
-        historyDiv.innerHTML = data.map(t =>
-            `<div style="margin-bottom: 8px;">
-                <b>[${t.type}]</b> Rp${t.amount} <br>
-                <small>${t.description} | ${new Date(t.createdAt).toLocaleString()}</small>
-            </div>`
-        ).join('');
     }
 </script>
 </body>

@@ -7,51 +7,90 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/wallet")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class WalletController {
+
     private final WalletService walletService;
-    @GetMapping("/{userId}")
-    public ResponseEntity<Wallet> getWallet(@PathVariable Long userId) {
+
+    @GetMapping
+    public ResponseEntity<Wallet> getWallet(@RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(walletService.getWalletByUserId(userId));
     }
 
-    @PostMapping("/{userId}/topup")
-    public ResponseEntity<Wallet> topUp(
-            @PathVariable Long userId,
+    @PostMapping("/topup/initiate")
+    public ResponseEntity<Map<String, Object>> initiateTopUp(
+            @RequestHeader("X-User-Id") Long userId,
             @RequestParam Long amount) {
-        return ResponseEntity.ok(walletService.topUp(userId, amount));
+        
+
+        String virtualAccountNumber = "0000" + userId;
+        String paymentReference = java.util.UUID.randomUUID().toString();
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", "PENDING");
+        response.put("virtualAccount", virtualAccountNumber);
+        response.put("amountToPay", amount);
+        response.put("paymentReference", paymentReference);
+        response.put("message", "Silakan bayar melalui nomor Virtual Account tersebut");
+
+        return ResponseEntity.ok(response);
     }
-    @PostMapping("/{userId}/withdraw")
-    public ResponseEntity<Wallet> withdraw(
-            @PathVariable Long userId,
+
+    @PostMapping("/topup/simulate-bank-pay")
+    public ResponseEntity<Wallet> simulateBankPayment(
+            @RequestParam Long userId,
             @RequestParam Long amount,
-            @RequestParam String bankAccount) {
-        return ResponseEntity.ok(walletService.withdraw(userId, amount, bankAccount));
+            @RequestParam String paymentReference) {
+        
+        Wallet updatedWallet = walletService.topUp(userId, amount, paymentReference);
+        return ResponseEntity.ok(updatedWallet);
     }
-    @GetMapping("/{userId}/history")
-    public ResponseEntity<List<Transaction>> getHistory(@PathVariable Long userId) {
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<Wallet> withdraw(
+            @RequestHeader("X-User-Id") Long userId,
+            @RequestParam Long amount,
+            @RequestParam String bankAccount,
+            @RequestHeader("X-Idempotency-Key") String idempotencyKey) {
+        return ResponseEntity.ok(walletService.withdraw(userId, amount, bankAccount, idempotencyKey));
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<List<Transaction>> getHistory(@RequestHeader("X-User-Id") Long userId) {
         return ResponseEntity.ok(walletService.getHistory(userId));
     }
 
-    @PostMapping("/{userId}/hold")
-    public ResponseEntity<String> holdBalance(@PathVariable Long userId, @RequestParam Long amount) {
-        walletService.holdAmount(userId, amount);
+    @PostMapping("/hold")
+    public ResponseEntity<String> holdBalance(
+            @RequestParam Long userId, 
+            @RequestParam Long amount,
+            @RequestHeader("X-Idempotency-Key") String idempotencyKey) {
+        walletService.holdAmount(userId, amount, idempotencyKey);
         return ResponseEntity.ok("Balance held successfully");
     }
 
-    @PostMapping("/{userId}/release")
-    public ResponseEntity<String> releaseBalance(@PathVariable Long userId, @RequestParam Long amount) {
-        walletService.releaseAmount(userId, amount);
+    @PostMapping("/release")
+    public ResponseEntity<String> releaseBalance(
+            @RequestParam Long userId, 
+            @RequestParam Long amount,
+            @RequestHeader("X-Idempotency-Key") String idempotencyKey) {
+        walletService.releaseAmount(userId, amount, idempotencyKey);
         return ResponseEntity.ok("Balance released successfully");
     }
 
-    @PostMapping("/{userId}/settle")
-    public ResponseEntity<String> settlePayment(@PathVariable Long userId, @RequestParam Long amount) {
-        walletService.settlePayment(userId, amount);
+    @PostMapping("/settle")
+    public ResponseEntity<String> settlePayment(
+            @RequestParam Long buyerId, 
+            @RequestParam Long sellerId, 
+            @RequestParam Long amount,
+            @RequestHeader("X-Idempotency-Key") String idempotencyKey) {
+        walletService.settlePayment(buyerId, sellerId, amount, idempotencyKey);
         return ResponseEntity.ok("Payment settled successfully");
     }
 }

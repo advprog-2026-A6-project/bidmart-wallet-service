@@ -18,11 +18,19 @@ public class Transaction {
     private Long userId;
 
     private String type;
-
     private Long amount;
     private String description;
 
-    @Column(name = "createdAt")
+    @Column(name = "balance_after")
+    private Long balanceAfter;
+
+    @Column(name = "held_balance_after")
+    private Long heldBalanceAfter;
+
+    @Column(name = "idempotency_key", unique = true, nullable = false)
+    private String idempotencyKey;
+
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist
