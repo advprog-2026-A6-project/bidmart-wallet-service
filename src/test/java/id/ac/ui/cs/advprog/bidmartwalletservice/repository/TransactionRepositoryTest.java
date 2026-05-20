@@ -19,7 +19,7 @@ class TransactionRepositoryTest {
     void testSaveAndFindById() {
         Transaction transaction = Transaction.builder()
                 .userId(1L)
-                .type("TOPUP")
+                .type(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.TOPUP)
                 .amount(10000L)
                 .description("Top up awal")
                 .idempotencyKey("idemp-topup-1")
@@ -31,7 +31,7 @@ class TransactionRepositoryTest {
         Transaction found = transactionRepository.findById(saved.getId()).orElse(null);
         assertNotNull(found);
         assertEquals(1L, found.getUserId());
-        assertEquals("TOPUP", found.getType());
+        assertEquals(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.TOPUP, found.getType());
     }
 
     @Test
@@ -40,25 +40,25 @@ class TransactionRepositoryTest {
         Long otherUserId = 2L;
 
         Transaction t1 = Transaction.builder()
-                .userId(userId).type("TOPUP").amount(1000L).idempotencyKey("idemp-t1").build();
+                .userId(userId).type(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.TOPUP).amount(1000L).idempotencyKey("idemp-t1").build();
         transactionRepository.save(t1);
 
         Thread.sleep(10);
 
         Transaction t2 = Transaction.builder()
-                .userId(userId).type("WITHDRAW").amount(500L).idempotencyKey("idemp-t2").build();
+                .userId(userId).type(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.WITHDRAW).amount(500L).idempotencyKey("idemp-t2").build();
         transactionRepository.save(t2);
 
         Transaction tOther = Transaction.builder()
-                .userId(otherUserId).type("TOPUP").amount(999L).idempotencyKey("idemp-tOther").build();
+                .userId(otherUserId).type(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.TOPUP).amount(999L).idempotencyKey("idemp-tOther").build();
         transactionRepository.save(tOther);
 
         List<Transaction> history = transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
 
         assertEquals(2, history.size(), "Harusnya hanya mengambil 2 transaksi milik userId 1");
 
-        assertEquals("WITHDRAW", history.get(0).getType(), "Transaksi terbaru (WITHDRAW) harus muncul pertama");
-        assertEquals("TOPUP", history.get(1).getType(), "Transaksi lama (TOPUP) harus muncul terakhir");
+        assertEquals(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.WITHDRAW, history.get(0).getType(), "Transaksi terbaru (WITHDRAW) harus muncul pertama");
+        assertEquals(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.TOPUP, history.get(1).getType(), "Transaksi lama (TOPUP) harus muncul terakhir");
     }
 
     @Test
