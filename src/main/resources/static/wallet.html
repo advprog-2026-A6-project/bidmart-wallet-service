@@ -32,18 +32,44 @@
                 <p>User ID: <span id="resId"></span></p>
                 <h2 style="color: #28a745; margin: 5px 0;">Rp<span id="resBalance">0</span></h2>
                 <p style="color: #dc3545; margin: 5px 0;">Saldo Tertahan (Bid): Rp<span id="resHeldBalance">0</span></p>
-                <button onclick="checkWallet()" style="background-color: #6c757d;">🔄 Refresh Saldo</button>
+                <hr style="border: 0; border-top: 1px solid #ddd; margin: 15px 0;">
+                <h4>🏦 Rekening Bank Simulasi</h4>
+                <p>Bank: <span id="resBankName">-</span></p>
+                <p>No. Rekening: <span id="resBankAccountNumber">-</span></p>
+                <h3 style="color: #007bff; margin: 5px 0;">Rp<span id="resBankBalance">0</span></h3>
+                <button onclick="checkWallet()" style="background-color: #6c757d; margin-top: 10px;">🔄 Refresh Saldo & Bank</button>
             </div>
 
             <div class="section">
                 <h3>➕ Top Up Saldo</h3>
-                <input type="number" id="amountInput" placeholder="Nominal (Contoh: 50000)">
-                <button onclick="doTopUp()">Proses Top Up</button>
+                <div id="topupInitiateForm">
+                    <label><b>1. Inisiasi VA Top Up:</b></label><br>
+                    <input type="number" id="amountInput" placeholder="Nominal (Contoh: 50000)" style="width: 70%;">
+                    <button onclick="initiateTopUpFlow()" style="background-color: #28a745;">Buat VA</button>
+                </div>
+                
+                <!-- Pending Payment Card (Initially hidden) -->
+                <div id="pendingPaymentCard" style="display: none; margin-top: 15px; padding: 15px; border: 2px dashed #ffc107; background: #fffdf0; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px 0; color: #856404;">⏳ Virtual Account Dibuat!</h4>
+                    <p style="margin: 5px 0;">Virtual Account: <b id="pendingVA" style="font-size: 1.1em; color: #333;">-</b></p>
+                    <p style="margin: 5px 0;">Nominal: <b style="color: #28a745;">Rp<span id="pendingAmount">-</span></b></p>
+                    <p style="margin: 5px 0;"><small style="color: #666;">Ref: <span id="pendingRef">-</span></small></p>
+                    <div style="margin-top: 10px; color: #856404; font-size: 0.85em;">
+                        <i>Gunakan Nomor VA di atas pada form simulasi pembayaran di bawah.</i>
+                    </div>
+                </div>
+
+                <!-- Simulation Payment Form -->
+                <div id="topupSimulateForm" style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                    <label><b>2. Simulasi Bayar VA:</b></label><br>
+                    <input type="text" id="simulateVaInput" placeholder="Masukkan Nomor VA (Contoh: 00001)" style="width: 70%; margin-top: 5px;"><br>
+                    <input type="number" id="simulateAmountInput" placeholder="Masukkan Nominal Bayar (Contoh: 50000)" style="width: 70%;"><br>
+                    <button onclick="simulatePaymentFlow()" style="background-color: #007bff; margin-top: 5px; width: 100%;">💸 Bayar VA Sekarang</button>
+                </div>
             </div>
 
             <div class="section">
                 <h3>🏦 Tarik Saldo ke Bank</h3>
-                <input type="text" id="bankInput" placeholder="Rekening (Contoh: BCA 12345678)" style="width: 100%;">
                 <input type="number" id="withdrawInput" placeholder="Nominal Tarik">
                 <button onclick="doWithdraw()">Tarik Sekarang</button>
             </div>
@@ -96,6 +122,7 @@
         if (!userId) return alert("User ID wajib diisi!");
 
         try {
+            // Fetch Wallet info
             const res = await fetch(API, { headers: getHeaders(true) });
             if (!res.ok) throw new Error("Gagal mengambil data wallet");
             const data = await res.json();
@@ -103,8 +130,21 @@
             document.getElementById('resId').innerText = data.userId;
             document.getElementById('resBalance').innerText = data.balance;
             document.getElementById('resHeldBalance').innerText = data.heldBalance || 0;
-            document.getElementById('displayArea').style.display = 'block';
 
+            // Fetch Bank Account info
+            try {
+                const bankRes = await fetch(`${API}/bank-account`, { headers: getHeaders(true) });
+                if (bankRes.ok) {
+                    const bankData = await bankRes.json();
+                    document.getElementById('resBankName').innerText = bankData.bankName || '-';
+                    document.getElementById('resBankAccountNumber').innerText = bankData.accountNumber || '-';
+                    document.getElementById('resBankBalance').innerText = bankData.balance || 0;
+                }
+            } catch (bankErr) {
+                console.error("Gagal mengambil data bank account", bankErr);
+            }
+
+            document.getElementById('displayArea').style.display = 'block';
             updateHistory(userId);
         } catch (e) {
             console.error(e);
@@ -132,45 +172,91 @@
         }
     }
 
-    async function doTopUp() {
+    // Global state to hold the initiated top-up details
+    let activeTopUp = null;
+
+    async function initiateTopUpFlow() {
         const amount = document.getElementById('amountInput').value;
-        const userId = document.getElementById('userIdInput').value;
-        if (!amount) return alert("Isi nominal!");
+        if (!amount || amount <= 0) return alert("Masukkan nominal top-up yang valid!");
 
         try {
-
             const initRes = await fetch(`${API}/topup/initiate?amount=${amount}`, {
                 method: 'POST',
-                headers: getHeaders()
+                headers: getHeaders(true)
             });
             if (!initRes.ok) throw new Error("Gagal inisiasi VA");
             const initData = await initRes.json();
 
+            activeTopUp = {
+                virtualAccount: initData.virtualAccount || initData.virtualAccountNumber,
+                amount: initData.amountToPay,
+                paymentReference: initData.paymentReference
+            };
 
-            const ref = initData.paymentReference;
+            // Show details in the pending card
+            document.getElementById('pendingVA').innerText = activeTopUp.virtualAccount;
+            document.getElementById('pendingAmount').innerText = activeTopUp.amount;
+            document.getElementById('pendingRef').innerText = activeTopUp.paymentReference;
+            document.getElementById('pendingPaymentCard').style.display = 'block';
 
+            // Auto-fill the simulation form for easier testing
+            document.getElementById('simulateVaInput').value = activeTopUp.virtualAccount;
+            document.getElementById('simulateAmountInput').value = activeTopUp.amount;
 
-            const payRes = await fetch(`${API}/topup/simulate-bank-pay?userId=${userId}&amount=${amount}&paymentReference=${ref}`, {
+            alert("Virtual Account " + activeTopUp.virtualAccount + " berhasil diinisiasi! Silakan bayar menggunakan form di bawah.");
+        } catch (e) {
+            console.error(e);
+            alert("Terjadi kesalahan sistem saat inisiasi VA.");
+        }
+    }
+
+    async function simulatePaymentFlow() {
+        const vaNumber = document.getElementById('simulateVaInput').value;
+        const amount = document.getElementById('simulateAmountInput').value;
+        if (!vaNumber || !amount) return alert("Lengkapi nomor Virtual Account dan nominal!");
+
+        // Parse userId from VA format: "0000" + userId
+        let userId = vaNumber.replace(/^0+/, "");
+        if (!userId) {
+            userId = document.getElementById('userIdInput').value; // fallback
+        }
+
+        // Use activeTopUp paymentReference if it matches, otherwise fallback to a newly generated UUID reference
+        let paymentReference = "";
+        if (activeTopUp && activeTopUp.virtualAccount === vaNumber && Number(activeTopUp.amount) === Number(amount)) {
+            paymentReference = activeTopUp.paymentReference;
+        } else {
+            paymentReference = crypto.randomUUID();
+        }
+
+        try {
+            const payRes = await fetch(`${API}/topup/simulate-bank-pay?userId=${userId}&amount=${amount}&paymentReference=${paymentReference}`, {
                 method: 'POST'
             });
 
             if (payRes.ok) {
-                alert("Top Up Berhasil! Dana masuk melalui Virtual Account: " + initData.virtualAccount);
-                checkWallet();
+                alert("Top Up Berhasil! Dana telah masuk ke dompet Anda.");
+                // Hide pending card and reset inputs
+                document.getElementById('pendingPaymentCard').style.display = 'none';
+                document.getElementById('amountInput').value = '';
+                document.getElementById('simulateVaInput').value = '';
+                document.getElementById('simulateAmountInput').value = '';
+                activeTopUp = null;
+                checkWallet(); // Auto-refresh wallet info
             } else {
-                alert("Gagal melakukan simulasi pembayaran bank.");
+                const text = await payRes.text();
+                alert("Simulasi Gagal: " + text);
             }
         } catch (e) {
             console.error(e);
-            alert("Terjadi kesalahan sistem.");
+            alert("Terjadi kesalahan jaringan atau sistem.");
         }
     }
 
     function doWithdraw() {
         const amount = document.getElementById('withdrawInput').value;
-        const bank = document.getElementById('bankInput').value;
-        if(!amount || !bank) return alert("Lengkapi nominal dan bank!");
-        executeTx(`${API}/withdraw?amount=${amount}&bankAccount=${encodeURIComponent(bank)}`, "Penarikan berhasil!", true);
+        if(!amount) return alert("Lengkapi nominal!");
+        executeTx(`${API}/withdraw?amount=${amount}`, "Penarikan berhasil!", true);
     }
 
     // === SIMULASI LELANG (Tidak pakai Header, oper lewat URL Query Param) ===

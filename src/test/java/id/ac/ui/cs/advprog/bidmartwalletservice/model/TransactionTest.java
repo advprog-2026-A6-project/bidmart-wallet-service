@@ -12,7 +12,7 @@ class TransactionTest {
         Transaction transaction = Transaction.builder()
                 .id(100L)
                 .userId(1L)
-                .type("WITHDRAW")
+                .type(TransactionType.WITHDRAW)
                 .amount(50000L)
                 .description("Transfer ke Bank BCA")
                 .createdAt(now)
@@ -20,7 +20,7 @@ class TransactionTest {
 
         assertEquals(100L, transaction.getId());
         assertEquals(1L, transaction.getUserId());
-        assertEquals("WITHDRAW", transaction.getType());
+        assertEquals(TransactionType.WITHDRAW, transaction.getType());
         assertEquals(50000L, transaction.getAmount());
         assertEquals("Transfer ke Bank BCA", transaction.getDescription());
         assertEquals(now, transaction.getCreatedAt());
@@ -33,14 +33,14 @@ class TransactionTest {
 
         transaction.setId(200L);
         transaction.setUserId(2L);
-        transaction.setType("TOPUP");
+        transaction.setType(TransactionType.TOPUP);
         transaction.setAmount(100000L);
         transaction.setDescription("Top up saldo");
         transaction.setCreatedAt(now);
 
         assertEquals(200L, transaction.getId());
         assertEquals(2L, transaction.getUserId());
-        assertEquals("TOPUP", transaction.getType());
+        assertEquals(TransactionType.TOPUP, transaction.getType());
         assertEquals(100000L, transaction.getAmount());
         assertEquals("Top up saldo", transaction.getDescription());
         assertEquals(now, transaction.getCreatedAt());
@@ -57,10 +57,10 @@ class TransactionTest {
     @Test
     void testAllArgsConstructor() {
         LocalDateTime now = LocalDateTime.now();
-        Transaction transaction = new Transaction(1L, 1L, "TOPUP", 1000L, "Desc", 1000L, 0L, "idemp-key", now);
+        Transaction transaction = new Transaction(1L, 1L, TransactionType.TOPUP, 1000L, "Desc", 1000L, 0L, "idemp-key", now);
 
         assertEquals(1L, transaction.getId());
-        assertEquals("TOPUP", transaction.getType());
+        assertEquals(TransactionType.TOPUP, transaction.getType());
     }
 
     @Test
