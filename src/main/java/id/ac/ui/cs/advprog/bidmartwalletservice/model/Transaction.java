@@ -17,7 +17,8 @@ public class Transaction {
     @Column(name = "user_id")
     private Long userId;
 
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private TransactionType type;
     private Long amount;
     private String description;
 

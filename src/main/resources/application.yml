@@ -18,10 +18,11 @@ spring:
     open-in-view: false
 
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    host: shark.rmq.cloudamqp.com
+    port: 5672
+    username: ovjyezsx
+    password: 9LJJ7ZDQTDmRydmSXAnb48FSqImyVfP_
+    virtual-host: ovjyezsx
 
 staging:
   links:

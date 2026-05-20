@@ -1,5 +1,6 @@
 package id.ac.ui.cs.advprog.bidmartwalletservice.controller;
 
+import id.ac.ui.cs.advprog.bidmartwalletservice.model.BankAccount;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.Transaction;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.Wallet;
 import id.ac.ui.cs.advprog.bidmartwalletservice.service.WalletService;
@@ -49,25 +50,63 @@ class WalletControllerTest {
     }
 
     @Test
+    void testGetBankAccount() throws Exception {
+        BankAccount mockBankAccount = BankAccount.builder()
+                .userId(1L)
+                .bankName("BCA")
+                .accountNumber("8012341")
+                .balance(5000L)
+                .build();
+        when(walletService.getBankAccountByUserId(1L)).thenReturn(mockBankAccount);
+
+        mockMvc.perform(get("/api/wallet/bank-account").header("X-User-Id", 1L))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(1))
+                .andExpect(jsonPath("$.bankName").value("BCA"))
+                .andExpect(jsonPath("$.accountNumber").value("8012341"))
+                .andExpect(jsonPath("$.balance").value(5000));
+    }
+
+    @Test
     void testInitiateTopUp() throws Exception {
+        id.ac.ui.cs.advprog.bidmartwalletservice.dto.TopUpInitiation mockResponse = id.ac.ui.cs.advprog.bidmartwalletservice.dto.TopUpInitiation.builder()
+                .status("PENDING")
+                .amountToPay(500L)
+                .virtualAccount("00001")
+                .build();
+        when(walletService.initiateTopUp(1L, 500L)).thenReturn(mockResponse);
+
         mockMvc.perform(post("/api/wallet/topup/initiate")
                         .header("X-User-Id", 1L)
                         .param("amount", "500"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDING"))
-                .andExpect(jsonPath("$.amountToPay").value(500));
+                .andExpect(jsonPath("$.amountToPay").value(500))
+                .andExpect(jsonPath("$.virtualAccount").value("00001"));
     }
 
     @Test
-    void testSimulateBankPayment() throws Exception {
-        when(walletService.topUp(1L, 500L, "test-ref")).thenReturn(
-                Wallet.builder().userId(1L).balance(1500L).version(1L).build()
-        );
+    void testConfirmTopUp() throws Exception {
+        Wallet updatedWallet = Wallet.builder().userId(1L).balance(1500L).version(1L).build();
+        when(walletService.topUp(1L, 500L, "idempotency-key")).thenReturn(updatedWallet);
+
+        mockMvc.perform(post("/api/wallet/topup/confirm")
+                        .header("X-User-Id", 1L)
+                        .param("amount", "500")
+                        .header("X-Idempotency-Key", "idempotency-key"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(1500));
+    }
+
+    @Test
+    void testSimulateBankPay() throws Exception {
+        Wallet updatedWallet = Wallet.builder().userId(1L).balance(1500L).version(1L).build();
+        when(walletService.topUp(1L, 500L, "payment-reference")).thenReturn(updatedWallet);
 
         mockMvc.perform(post("/api/wallet/topup/simulate-bank-pay")
                         .param("userId", "1")
                         .param("amount", "500")
-                        .param("paymentReference", "test-ref"))
+                        .param("paymentReference", "payment-reference"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.balance").value(1500));
     }
@@ -76,12 +115,11 @@ class WalletControllerTest {
     void testWithdraw() throws Exception {
         Wallet updatedWallet = Wallet.builder().userId(1L).balance(800L).version(1L).build();
 
-        when(walletService.withdraw(1L, 200L, "BCA-123", "idempotency-key")).thenReturn(updatedWallet);
+        when(walletService.withdraw(1L, 200L, "idempotency-key")).thenReturn(updatedWallet);
 
         mockMvc.perform(post("/api/wallet/withdraw")
                         .header("X-User-Id", 1L)
                         .param("amount", "200")
-                        .param("bankAccount", "BCA-123")
                         .header("X-Idempotency-Key", "idempotency-key"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.balance").value(800));
@@ -90,11 +128,11 @@ class WalletControllerTest {
     @Test
     void testGetHistory() throws Exception {
         Transaction t1 = Transaction.builder()
-                .id(1L).userId(1L).type("TOPUP").amount(1000L)
+                .id(1L).userId(1L).type(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.TOPUP).amount(1000L)
                 .description("Top-up").createdAt(LocalDateTime.now()).build();
 
         Transaction t2 = Transaction.builder()
-                .id(2L).userId(1L).type("WITHDRAW").amount(500L)
+                .id(2L).userId(1L).type(id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType.WITHDRAW).amount(500L)
                 .description("Transfer ke Bank").createdAt(LocalDateTime.now()).build();
 
         List<Transaction> mockHistory = Arrays.asList(t1, t2);
