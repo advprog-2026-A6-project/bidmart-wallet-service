@@ -62,7 +62,7 @@ public class WalletFundingService {
         bankAccount.setBalance(bankAccount.getBalance() - amount);
         bankAccountRepository.save(bankAccount);
 
-        Wallet wallet = walletAccountService.getWalletByUserId(userId);
+        Wallet wallet = walletAccountService.getWalletByUserIdForUpdate(userId);
         wallet.setBalance(wallet.getBalance() + amount);
         Wallet savedWallet = walletRepository.save(wallet);
 
@@ -94,7 +94,7 @@ public class WalletFundingService {
             return walletAccountService.getWalletByUserId(userId);
         }
 
-        Wallet wallet = walletAccountService.getWalletByUserId(userId);
+        Wallet wallet = walletAccountService.getWalletByUserIdForUpdate(userId);
         if (wallet.getBalance() < amount) {
             throw new IllegalArgumentException("Saldo wallet tidak mencukupi untuk melakukan withdraw!");
         }

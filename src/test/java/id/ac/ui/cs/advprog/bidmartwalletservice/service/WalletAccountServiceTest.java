@@ -74,6 +74,26 @@ class WalletAccountServiceTest {
     }
 
     @Test
+    void testGetWalletByUserIdForUpdate_Found() {
+        when(walletRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(mockWallet));
+
+        Wallet result = walletAccountService.getWalletByUserIdForUpdate(1L);
+
+        assertEquals(1000L, result.getBalance());
+    }
+
+    @Test
+    void testGetWalletByUserIdForUpdate_NotFound_ShouldCreateNew() {
+        when(walletRepository.findByIdForUpdate(2L)).thenReturn(Optional.empty());
+        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
+
+        Wallet result = walletAccountService.getWalletByUserIdForUpdate(2L);
+
+        assertEquals(0L, result.getBalance());
+        verify(walletRepository).save(any(Wallet.class));
+    }
+
+    @Test
     void testGetBankAccountByUserId_Found() {
         when(bankAccountRepository.findById(1L)).thenReturn(Optional.of(mockBankAccount));
         BankAccount result = walletAccountService.getBankAccountByUserId(1L);

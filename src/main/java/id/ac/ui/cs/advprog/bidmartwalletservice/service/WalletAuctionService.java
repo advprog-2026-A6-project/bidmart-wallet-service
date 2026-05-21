@@ -31,7 +31,7 @@ public class WalletAuctionService {
             return;
         }
 
-        Wallet wallet = walletAccountService.getWalletByUserId(userId);
+        Wallet wallet = walletAccountService.getWalletByUserIdForUpdate(userId);
         if (wallet.getBalance() < amount) {
             throw new IllegalStateException("Saldo tidak cukup untuk melakukan bid");
         }
@@ -65,7 +65,7 @@ public class WalletAuctionService {
             return;
         }
 
-        Wallet wallet = walletAccountService.getWalletByUserId(userId);
+        Wallet wallet = walletAccountService.getWalletByUserIdForUpdate(userId);
         if (wallet.getHeldBalance() < amount) {
             throw new IllegalStateException("Data held balance tidak konsisten untuk release!");
         }
@@ -99,13 +99,21 @@ public class WalletAuctionService {
             return;
         }
 
-        Wallet buyerWallet = walletAccountService.getWalletByUserId(buyerId);
+        Wallet buyerWallet;
+        Wallet sellerWallet;
+        if (buyerId <= sellerId) {
+            buyerWallet = walletAccountService.getWalletByUserIdForUpdate(buyerId);
+            sellerWallet = walletAccountService.getWalletByUserIdForUpdate(sellerId);
+        } else {
+            sellerWallet = walletAccountService.getWalletByUserIdForUpdate(sellerId);
+            buyerWallet = walletAccountService.getWalletByUserIdForUpdate(buyerId);
+        }
+
         if (buyerWallet.getHeldBalance() < amount) {
             throw new IllegalStateException("Data held balance pembeli tidak konsisten!");
         }
         buyerWallet.setHeldBalance(buyerWallet.getHeldBalance() - amount);
 
-        Wallet sellerWallet = walletAccountService.getWalletByUserId(sellerId);
         sellerWallet.setBalance(sellerWallet.getBalance() + amount);
 
         walletRepository.save(buyerWallet);

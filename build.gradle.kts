@@ -1,5 +1,6 @@
 plugins {
     java
+    id("net.serenity-bdd.serenity-gradle-plugin") version "5.3.9"
     id("org.springframework.boot") version "3.5.10"
     id("io.spring.dependency-management") version "1.1.7"
     id("jacoco")
@@ -36,6 +37,9 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
     annotationProcessor("org.projectlombok:lombok")
+    testImplementation(platform("net.serenity-bdd:serenity-bom:5.3.9"))
+    testImplementation("net.serenity-bdd:serenity-core")
+    testImplementation("net.serenity-bdd:serenity-junit5")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
@@ -50,6 +54,7 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
+    finalizedBy("aggregate")
 }
 
 tasks.jacocoTestReport {

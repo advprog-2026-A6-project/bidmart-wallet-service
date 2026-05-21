@@ -53,7 +53,7 @@ class WalletAuctionServiceTest {
 
     @Test
     void testHoldAmount_Success() {
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
 
         walletAuctionService.holdAmount(1L, 400L, "idempotency-key");
@@ -84,12 +84,12 @@ class WalletAuctionServiceTest {
 
         walletAuctionService.holdAmount(1L, 400L, "existing-key");
 
-        verify(walletAccountService, never()).getWalletByUserId(1L);
+        verify(walletAccountService, never()).getWalletByUserIdForUpdate(1L);
     }
 
     @Test
     void testHoldAmount_InsufficientBalance() {
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             walletAuctionService.holdAmount(1L, 2000L, "idempotency-key");
@@ -104,7 +104,7 @@ class WalletAuctionServiceTest {
         mockWallet.setBalance(700L);
         mockWallet.setHeldBalance(300L);
 
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
 
         walletAuctionService.releaseAmount(1L, 300L, "idempotency-key");
@@ -134,14 +134,14 @@ class WalletAuctionServiceTest {
 
         walletAuctionService.releaseAmount(1L, 100L, "existing-key");
 
-        verify(walletAccountService, never()).getWalletByUserId(1L);
+        verify(walletAccountService, never()).getWalletByUserIdForUpdate(1L);
     }
 
     @Test
     void testReleaseAmount_InconsistentData() {
         mockWallet.setBalance(700L);
         mockWallet.setHeldBalance(100L);
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             walletAuctionService.releaseAmount(1L, 300L, "idempotency-key");
@@ -157,8 +157,8 @@ class WalletAuctionServiceTest {
 
         Wallet sellerWallet = Wallet.builder().userId(2L).balance(0L).heldBalance(0L).build();
 
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
-        when(walletAccountService.getWalletByUserId(2L)).thenReturn(sellerWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(2L)).thenReturn(sellerWallet);
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
 
         walletAuctionService.settlePayment(1L, 2L, 300L, "idempotency-key");
@@ -190,13 +190,13 @@ class WalletAuctionServiceTest {
 
         walletAuctionService.settlePayment(1L, 2L, 100L, "existing-key");
 
-        verify(walletAccountService, never()).getWalletByUserId(anyLong());
+        verify(walletAccountService, never()).getWalletByUserIdForUpdate(anyLong());
     }
 
     @Test
     void testSettlePayment_InconsistentData() {
         mockWallet.setHeldBalance(100L);
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
 
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             walletAuctionService.settlePayment(1L, 2L, 500L, "idempotency-key");
