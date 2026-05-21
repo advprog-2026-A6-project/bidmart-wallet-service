@@ -42,14 +42,6 @@ public class WalletController {
         return ResponseEntity.ok(walletService.topUp(userId, amount, idempotencyKey));
     }
 
-    @PostMapping("/topup/simulate-bank-pay")
-    public ResponseEntity<Wallet> simulateBankPay(
-            @RequestParam Long userId,
-            @RequestParam Long amount,
-            @RequestParam String paymentReference) {
-        return ResponseEntity.ok(walletService.topUp(userId, amount, paymentReference));
-    }
-
     @PostMapping("/withdraw")
     public ResponseEntity<Wallet> withdraw(
             @RequestHeader("X-User-Id") Long userId,

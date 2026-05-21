@@ -99,19 +99,6 @@ class WalletControllerTest {
     }
 
     @Test
-    void testSimulateBankPay() throws Exception {
-        Wallet updatedWallet = Wallet.builder().userId(1L).balance(1500L).version(1L).build();
-        when(walletService.topUp(1L, 500L, "payment-reference")).thenReturn(updatedWallet);
-
-        mockMvc.perform(post("/api/wallet/topup/simulate-bank-pay")
-                        .param("userId", "1")
-                        .param("amount", "500")
-                        .param("paymentReference", "payment-reference"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.balance").value(1500));
-    }
-
-    @Test
     void testWithdraw() throws Exception {
         Wallet updatedWallet = Wallet.builder().userId(1L).balance(800L).version(1L).build();
 

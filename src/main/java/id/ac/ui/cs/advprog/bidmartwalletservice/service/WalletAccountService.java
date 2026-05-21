@@ -20,9 +20,12 @@ public class WalletAccountService {
 
     public Wallet getWalletByUserId(Long userId) {
         return walletRepository.findById(userId)
-                .orElseGet(() -> walletRepository.save(
-                        Wallet.builder().userId(userId).balance(0L).heldBalance(0L).build()
-                ));
+                .orElseGet(() -> createWallet(userId));
+    }
+
+    public Wallet getWalletByUserIdForUpdate(Long userId) {
+        return walletRepository.findByIdForUpdate(userId)
+                .orElseGet(() -> createWallet(userId));
     }
 
     public BankAccount getBankAccountByUserId(Long userId) {
@@ -40,5 +43,11 @@ public class WalletAccountService {
 
     public List<Transaction> getHistory(Long userId) {
         return transactionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+    }
+
+    private Wallet createWallet(Long userId) {
+        return walletRepository.save(
+                Wallet.builder().userId(userId).balance(0L).heldBalance(0L).build()
+        );
     }
 }
