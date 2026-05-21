@@ -9,7 +9,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DataJpaTest
+@DataJpaTest(properties = "spring.jpa.database-platform=org.hibernate.dialect.H2Dialect")
 class WalletRepositoryTest {
 
     @Autowired
@@ -38,5 +38,21 @@ class WalletRepositoryTest {
         savedWallet.setBalance(2000L);
         walletRepository.save(savedWallet);
         assertEquals(2000L, walletRepository.findById(200L).get().getBalance());
+    }
+
+    @Test
+    void testFindByIdForUpdate() {
+        Wallet wallet = Wallet.builder()
+                .userId(300L)
+                .balance(750L)
+                .heldBalance(0L)
+                .build();
+
+        walletRepository.save(wallet);
+
+        Optional<Wallet> found = walletRepository.findByIdForUpdate(300L);
+
+        assertTrue(found.isPresent());
+        assertEquals(750L, found.get().getBalance());
     }
 }

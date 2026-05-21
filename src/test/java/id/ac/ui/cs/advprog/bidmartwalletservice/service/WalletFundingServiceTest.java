@@ -78,7 +78,7 @@ class WalletFundingServiceTest {
     @Test
     void testTopUp_Success() {
         when(walletAccountService.getBankAccountByUserId(1L)).thenReturn(mockBankAccount);
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
 
         Wallet result = walletFundingService.topUp(1L, 500L, "idempotency-key");
@@ -133,7 +133,7 @@ class WalletFundingServiceTest {
     @Test
     void testWithdraw_Success() {
         when(walletAccountService.getBankAccountByUserId(1L)).thenReturn(mockBankAccount);
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
 
         Wallet result = walletFundingService.withdraw(1L, 400L, "idempotency-key");
@@ -147,7 +147,7 @@ class WalletFundingServiceTest {
 
     @Test
     void testWithdraw_InsufficientBalance() {
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             walletFundingService.withdraw(1L, 2000L, "idempotency-key");
@@ -161,7 +161,7 @@ class WalletFundingServiceTest {
     void testWithdraw_BankAccountNotFound_ShouldCreateAutomaticallyAndSucceed() {
         BankAccount emptyBankAccount = BankAccount.builder().userId(1L).balance(0L).build();
         when(walletAccountService.getBankAccountByUserId(1L)).thenReturn(emptyBankAccount);
-        when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
+        when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
         when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
 
         Wallet result = walletFundingService.withdraw(1L, 400L, "idempotency-key");
