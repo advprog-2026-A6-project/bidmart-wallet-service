@@ -4,15 +4,12 @@ import id.ac.ui.cs.advprog.bidmartwalletservice.model.Transaction;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.Wallet;
 import id.ac.ui.cs.advprog.bidmartwalletservice.repository.TransactionRepository;
-import id.ac.ui.cs.advprog.bidmartwalletservice.repository.WalletRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -25,9 +22,6 @@ class WalletAuctionServiceTest {
     private WalletAccountService walletAccountService;
 
     @Mock
-    private WalletRepository walletRepository;
-
-    @Mock
     private TransactionRepository transactionRepository;
 
     @Mock
@@ -37,8 +31,6 @@ class WalletAuctionServiceTest {
     private WalletAuctionService walletAuctionService;
 
     private Wallet mockWallet;
-    private Transaction mockTransaction;
-
     @BeforeEach
     void setUp() {
         mockWallet = Wallet.builder()
@@ -47,21 +39,16 @@ class WalletAuctionServiceTest {
                 .heldBalance(0L)
                 .version(0L)
                 .build();
-
-        mockTransaction = new Transaction();
     }
 
     @Test
     void testHoldAmount_Success() {
         when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
-        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
-
         walletAuctionService.holdAmount(1L, 400L, "idempotency-key");
 
         assertEquals(600L, mockWallet.getBalance());
         assertEquals(400L, mockWallet.getHeldBalance());
         verify(transactionRepository, times(1)).save(any(Transaction.class));
-        verify(walletRepository).save(mockWallet);
         verify(eventPublisher).publishEvent(1L, TransactionType.HOLD, 400L, "Dana ditahan untuk penawaran lelang");
     }
 
@@ -80,7 +67,7 @@ class WalletAuctionServiceTest {
 
     @Test
     void testHoldAmount_IdempotencyHit() {
-        when(transactionRepository.findByIdempotencyKey("existing-key")).thenReturn(Optional.of(mockTransaction));
+        when(transactionRepository.existsByIdempotencyKey("existing-key")).thenReturn(true);
 
         walletAuctionService.holdAmount(1L, 400L, "existing-key");
 
@@ -96,7 +83,7 @@ class WalletAuctionServiceTest {
         });
 
         assertEquals("Saldo tidak cukup untuk melakukan bid", exception.getMessage());
-        verify(walletRepository, never()).save(any(Wallet.class));
+        verify(transactionRepository, never()).save(any(Transaction.class));
     }
 
     @Test
@@ -105,14 +92,11 @@ class WalletAuctionServiceTest {
         mockWallet.setHeldBalance(300L);
 
         when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
-        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
-
         walletAuctionService.releaseAmount(1L, 300L, "idempotency-key");
 
         assertEquals(1000L, mockWallet.getBalance());
         assertEquals(0L, mockWallet.getHeldBalance());
         verify(transactionRepository, times(1)).save(any(Transaction.class));
-        verify(walletRepository).save(mockWallet);
         verify(eventPublisher).publishEvent(1L, TransactionType.RELEASE, 300L, "Dana dilepaskan karena bid kalah");
     }
 
@@ -130,7 +114,7 @@ class WalletAuctionServiceTest {
 
     @Test
     void testReleaseAmount_IdempotencyHit() {
-        when(transactionRepository.findByIdempotencyKey("existing-key")).thenReturn(Optional.of(mockTransaction));
+        when(transactionRepository.existsByIdempotencyKey("existing-key")).thenReturn(true);
 
         walletAuctionService.releaseAmount(1L, 100L, "existing-key");
 
@@ -159,15 +143,12 @@ class WalletAuctionServiceTest {
 
         when(walletAccountService.getWalletByUserIdForUpdate(1L)).thenReturn(mockWallet);
         when(walletAccountService.getWalletByUserIdForUpdate(2L)).thenReturn(sellerWallet);
-        when(walletRepository.save(any(Wallet.class))).thenAnswer(i -> i.getArguments()[0]);
-
         walletAuctionService.settlePayment(1L, 2L, 300L, "idempotency-key");
 
         assertEquals(700L, mockWallet.getBalance());
         assertEquals(0L, mockWallet.getHeldBalance());
         assertEquals(300L, sellerWallet.getBalance());
         verify(transactionRepository, times(2)).save(any(Transaction.class));
-        verify(walletRepository, times(2)).save(any(Wallet.class));
         verify(eventPublisher).publishEvent(1L, TransactionType.PAYMENT, 300L, "Pembayaran lelang dimenangkan");
         verify(eventPublisher).publishEvent(2L, TransactionType.RECEIPT, 300L, "Penerimaan dana dari hasil lelang");
     }
@@ -186,7 +167,7 @@ class WalletAuctionServiceTest {
 
     @Test
     void testSettlePayment_IdempotencyHit() {
-        when(transactionRepository.findByIdempotencyKey("existing-key")).thenReturn(Optional.of(mockTransaction));
+        when(transactionRepository.existsByIdempotencyKey("existing-key")).thenReturn(true);
 
         walletAuctionService.settlePayment(1L, 2L, 100L, "existing-key");
 
@@ -203,6 +184,6 @@ class WalletAuctionServiceTest {
         });
 
         assertEquals("Data held balance pembeli tidak konsisten!", exception.getMessage());
-        verify(walletRepository, never()).save(any(Wallet.class));
+        verify(transactionRepository, never()).save(any(Transaction.class));
     }
 }

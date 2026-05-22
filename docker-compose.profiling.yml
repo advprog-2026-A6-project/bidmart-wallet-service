@@ -1,0 +1,35 @@
+services:
+  wallet-postgres:
+    image: postgres:16
+    container_name: bidmart-wallet-profiling-postgres
+    environment:
+      POSTGRES_DB: bidmart_wallet_profiling
+      POSTGRES_USER: bidmart
+      POSTGRES_PASSWORD: bidmart
+    ports:
+      - "5433:5432"
+    volumes:
+      - wallet-profiling-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bidmart -d bidmart_wallet_profiling"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  wallet-rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: bidmart-wallet-profiling-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: bidmart
+      RABBITMQ_DEFAULT_PASS: bidmart
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  wallet-profiling-postgres-data:
