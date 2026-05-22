@@ -4,18 +4,15 @@ import id.ac.ui.cs.advprog.bidmartwalletservice.model.Transaction;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.TransactionType;
 import id.ac.ui.cs.advprog.bidmartwalletservice.model.Wallet;
 import id.ac.ui.cs.advprog.bidmartwalletservice.repository.TransactionRepository;
-import id.ac.ui.cs.advprog.bidmartwalletservice.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class WalletAuctionService {
 
     private final WalletAccountService walletAccountService;
-    private final WalletRepository walletRepository;
     private final TransactionRepository transactionRepository;
     private final WalletEventPublisher eventPublisher;
 
@@ -26,8 +23,7 @@ public class WalletAuctionService {
             throw new IllegalArgumentException("Idempotency key wajib disertakan");
         }
 
-        Optional<Transaction> existingTx = transactionRepository.findByIdempotencyKey(idempotencyKey);
-        if (existingTx.isPresent()) {
+        if (transactionRepository.existsByIdempotencyKey(idempotencyKey)) {
             return;
         }
 
@@ -49,7 +45,6 @@ public class WalletAuctionService {
                 .description("Dana ditahan untuk penawaran lelang")
                 .build());
 
-        walletRepository.save(wallet);
         eventPublisher.publishEvent(userId, TransactionType.HOLD, amount, "Dana ditahan untuk penawaran lelang");
     }
 
@@ -60,8 +55,7 @@ public class WalletAuctionService {
             throw new IllegalArgumentException("Idempotency key wajib disertakan");
         }
 
-        Optional<Transaction> existingTx = transactionRepository.findByIdempotencyKey(idempotencyKey);
-        if (existingTx.isPresent()) {
+        if (transactionRepository.existsByIdempotencyKey(idempotencyKey)) {
             return;
         }
 
@@ -83,7 +77,6 @@ public class WalletAuctionService {
                 .description("Dana dilepaskan karena bid kalah")
                 .build());
 
-        walletRepository.save(wallet);
         eventPublisher.publishEvent(userId, TransactionType.RELEASE, amount, "Dana dilepaskan karena bid kalah");
     }
 
@@ -94,8 +87,7 @@ public class WalletAuctionService {
             throw new IllegalArgumentException("Idempotency key wajib disertakan");
         }
 
-        Optional<Transaction> existingTx = transactionRepository.findByIdempotencyKey(idempotencyKey);
-        if (existingTx.isPresent()) {
+        if (transactionRepository.existsByIdempotencyKey(idempotencyKey)) {
             return;
         }
 
@@ -115,9 +107,6 @@ public class WalletAuctionService {
         buyerWallet.setHeldBalance(buyerWallet.getHeldBalance() - amount);
 
         sellerWallet.setBalance(sellerWallet.getBalance() + amount);
-
-        walletRepository.save(buyerWallet);
-        walletRepository.save(sellerWallet);
 
         transactionRepository.save(Transaction.builder()
                 .userId(buyerId)

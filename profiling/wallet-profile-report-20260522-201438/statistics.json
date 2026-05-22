@@ -1,0 +1,34 @@
+{
+  "Total" : {
+    "transaction" : "Total",
+    "sampleCount" : 1000,
+    "errorCount" : 0,
+    "errorPct" : 0.0,
+    "meanResTime" : 13.313000000000015,
+    "medianResTime" : 6.0,
+    "minResTime" : 4.0,
+    "maxResTime" : 210.0,
+    "pct1ResTime" : 27.0,
+    "pct2ResTime" : 35.94999999999993,
+    "pct3ResTime" : 120.0,
+    "throughput" : 123.74706100730108,
+    "receivedKBytesPerSec" : 40.64583397784928,
+    "sentKBytesPerSec" : 20.529444066328427
+  },
+  "GET wallet" : {
+    "transaction" : "GET wallet",
+    "sampleCount" : 1000,
+    "errorCount" : 0,
+    "errorPct" : 0.0,
+    "meanResTime" : 13.313000000000015,
+    "medianResTime" : 6.0,
+    "minResTime" : 4.0,
+    "maxResTime" : 210.0,
+    "pct1ResTime" : 27.0,
+    "pct2ResTime" : 35.94999999999993,
+    "pct3ResTime" : 120.0,
+    "throughput" : 123.74706100730108,
+    "receivedKBytesPerSec" : 40.64583397784928,
+    "sentKBytesPerSec" : 20.529444066328427
+  }
+}
