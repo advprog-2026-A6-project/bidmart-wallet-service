@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    url: ${WALLET_PROFILING_DB_URL:jdbc:postgresql://localhost:5433/bidmart_wallet_profiling}
+    username: ${WALLET_PROFILING_DB_USERNAME:bidmart}
+    password: ${WALLET_PROFILING_DB_PASSWORD:bidmart}
+    hikari:
+      maximum-pool-size: ${WALLET_PROFILING_DB_POOL_SIZE:20}
+      minimum-idle: ${WALLET_PROFILING_DB_MIN_IDLE:5}
+      connection-timeout: 30000
+      idle-timeout: 30000
+      max-lifetime: 1800000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  rabbitmq:
+    host: ${WALLET_PROFILING_RABBIT_HOST:localhost}
+    port: ${WALLET_PROFILING_RABBIT_PORT:5673}
+    username: ${WALLET_PROFILING_RABBIT_USERNAME:bidmart}
+    password: ${WALLET_PROFILING_RABBIT_PASSWORD:bidmart}
+    virtual-host: ${WALLET_PROFILING_RABBIT_VHOST:/}
+
+server:
+  port: ${WALLET_PROFILING_SERVER_PORT:8084}
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
+    org.springframework.amqp: WARN

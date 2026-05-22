@@ -11,7 +11,6 @@ import id.ac.ui.cs.advprog.bidmartwalletservice.repository.WalletRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -48,8 +47,7 @@ public class WalletFundingService {
             throw new IllegalArgumentException("Idempotency key wajib disertakan");
         }
 
-        Optional<Transaction> existingTx = transactionRepository.findByIdempotencyKey(idempotencyKey);
-        if (existingTx.isPresent()) {
+        if (transactionRepository.existsByIdempotencyKey(idempotencyKey)) {
             return walletAccountService.getWalletByUserId(userId);
         }
 
@@ -89,8 +87,7 @@ public class WalletFundingService {
             throw new IllegalArgumentException("Idempotency key wajib disertakan");
         }
 
-        Optional<Transaction> existingTx = transactionRepository.findByIdempotencyKey(idempotencyKey);
-        if (existingTx.isPresent()) {
+        if (transactionRepository.existsByIdempotencyKey(idempotencyKey)) {
             return walletAccountService.getWalletByUserId(userId);
         }
 

@@ -15,8 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -43,7 +41,6 @@ class WalletFundingServiceTest {
     private WalletFundingService walletFundingService;
 
     private Wallet mockWallet;
-    private Transaction mockTransaction;
     private BankAccount mockBankAccount;
 
     @BeforeEach
@@ -61,8 +58,6 @@ class WalletFundingServiceTest {
                 .accountNumber("1234567890")
                 .balance(5000L)
                 .build();
-
-        mockTransaction = new Transaction();
     }
 
     @Test
@@ -121,7 +116,7 @@ class WalletFundingServiceTest {
 
     @Test
     void testTopUp_IdempotencyHit() {
-        when(transactionRepository.findByIdempotencyKey("existing-key")).thenReturn(Optional.of(mockTransaction));
+        when(transactionRepository.existsByIdempotencyKey("existing-key")).thenReturn(true);
         when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
 
         Wallet result = walletFundingService.topUp(1L, 500L, "existing-key");
@@ -186,7 +181,7 @@ class WalletFundingServiceTest {
 
     @Test
     void testWithdraw_IdempotencyHit() {
-        when(transactionRepository.findByIdempotencyKey("existing-key")).thenReturn(Optional.of(mockTransaction));
+        when(transactionRepository.existsByIdempotencyKey("existing-key")).thenReturn(true);
         when(walletAccountService.getWalletByUserId(1L)).thenReturn(mockWallet);
 
         Wallet result = walletFundingService.withdraw(1L, 200L, "existing-key");
